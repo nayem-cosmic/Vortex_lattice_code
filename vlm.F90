@@ -2,7 +2,7 @@
 
 module com
     real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),x(4)
-    real :: b,c,s,ar,sn1,cs1,sign,ch,dxw
+    real :: b,c,s,ar,sn1,cs1,isign,ch,dxw
     integer :: ib,jb
 end module com
 
@@ -53,8 +53,8 @@ program vlm
     k=0
     do i=1,ib
         do j=1,jb
-            sign=0.0
             k=k+1
+            isign=0   
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
             do i1=1,ib
@@ -66,6 +66,7 @@ program vlm
                 end do
             end do
 ! add influence of wing's other half
+            isign=1
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
             do i1=1,ib
@@ -76,7 +77,7 @@ program vlm
             end do
             if(ch.gt.100.0) goto 12
 ! add influence of mirror image (due to ground)
-            sign=10.0
+            isign=2
             call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
             do i1=1,ib
@@ -86,6 +87,7 @@ program vlm
                 end do
             end do
 ! add mirror image influence of wing's other half.
+            isign=3
             call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
             do i1=1,ib
@@ -94,7 +96,7 @@ program vlm
                     a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
-            sign=0.0
+            isign=0
 
 12  continue
 
@@ -190,7 +192,7 @@ program vlm
 end program vlm
 
 subroutine grid
-    use com,only : qf,qc,ds,x,b,c,s,ar,sn1,cs1,ib,jb,ch,sign,dxw
+    use com,only : qf,qc,ds,x,b,c,s,ar,sn1,cs1,ib,jb,ch,isign,dxw
     pi=3.141592654
 ! x(1) - is root l.e., x(2) tip l.e., x(3) tip t.e., and x(4) is root t.e.
 ! ib: no. of chordwise boxes, jb: no. of spanwise boxes
@@ -316,7 +318,7 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gamma,u,v,w)
 end subroutine vortex
 
 subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
-    use com,only : ds,ib,jb,ch,sign,a1,qf
+    use com,only : ds,ib,jb,ch,isign,a1,qf
 	real :: gamma(4,13)
 
 ! calculates induced velocity at a point (x,y,z), due to vorticity
@@ -341,9 +343,39 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
             u0=u2+u4+(u1+u3)*onoff
             v0=v2+v4+(v1+v3)*onoff
             w0=w2+w4+(w1+w3)*onoff
-            a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
-            if(sign.ge.1.0) a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
-            if(i.eq.ib1) a1(ib,j)=a1(ib,j)+a1(ib1,j)
+
+! influence coefficient at (x,y,z) for (i,j) panel
+! when i .eq. ib1 a1(ib1,j)=a1(ib,j)+a1(ib1,j)
+            if(isign.eq.0) then
+                if(i.lt.ib1) then
+                    a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
+                else if(i.eq.ib1) then
+                    a1(ib1,j)=u0*ds(ib,j,1)+v0*ds(ib,j,2)+w0*ds(ib,j,3)+u0*ds(ib1,j,1)+v0*ds(ib1,j,2)+w0*ds(ib1,j,3)
+                end if
+
+            else if(isign.eq.1) then
+                if(i.lt.ib1) then
+                    a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
+                else if(i.eq.ib1) then
+                    a1(ib1,j)=u0*ds(ib,j,1)-v0*ds(ib,j,2)+w0*ds(ib,j,3)+u0*ds(ib1,j,1)-v0*ds(ib1,j,2)+w0*ds(ib1,j,3)
+                end if
+
+            else if(isign.eq.2) then
+                if(i.lt.ib1) then
+                    a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
+                else if(i.eq.ib1) then
+                    a1(ib1,j)=u0*ds(ib,j,1)+v0*ds(ib,j,2)-w0*ds(ib,j,3)+u0*ds(ib1,j,1)+v0*ds(ib1,j,2)-w0*ds(ib1,j,3)
+                end if
+
+            else if(isign.eq.3) then
+                if(i.lt.ib1) then
+                    a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
+                else if(i.eq.ib1) then
+                    a1(ib1,j)=u0*ds(ib,j,1)-v0*ds(ib,j,2)-w0*ds(ib,j,3)+u0*ds(ib1,j,1)-v0*ds(ib1,j,2)-w0*ds(ib1,j,3)
+                end if
+
+            end if
+
             u=u+u0
             v=v+v0
             w=w+w0
