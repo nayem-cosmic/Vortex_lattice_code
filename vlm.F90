@@ -1,20 +1,28 @@
 ! PROGRAM No. 13: RECTANGULAR LIFTING SURFACE (VLM)
 ! -------------------------------------------------
 ! 3D-VLM CODE FOR SIMPLE WING PLANFORMS WITH GROUND EFFECT(BYJOE KATZ,1974).
+module com1
+    real :: gama(4,13),gama1(52),gama1j(5),dL(4,13),dd(4,13),dp(4,13),a(52,52),dw(52),dly(13)
+    integer :: ip(52)
+end module com1
 
-        DIMENSION QF(6,14,3),QC(4,13,3),DS(4,13,4)
-	DIMENSION GAMA(4,13),DL(4,13),DD(4,13),DP(4,13)
-	DIMENSION A(52,52),GAMA1(52),DW(52),IP(52)
-	DIMENSION A1(5,13),DLY(13),GAMA1J(5),X(4)
-	COMMON/NO1/ DS,X,B,C,S,AR,SN1,CS1
-	COMMON/NO2/ IB,JB,CH,SIGN
-	COMMON/NO3/ A1
-	COMMON/NO4/ QF,QC,DXW
+module com2
+    real :: b,c,s,ar,sn1,cs1,sign,ch,dxw
+    integer :: ib,jb
+    real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13)
+end module com2
+
+module com3
+    real :: x(4)
+end module com3
 
 ! ==========
 ! INPUT DATA
 ! ==========
-
+program vlm
+    use com1
+    use com2
+    use com3
 	IB=4
 	JB=13
 	X(1)=0.
@@ -23,7 +31,7 @@
 	X(4)=4.
 	B=13.
 	VT=10.0
-	ALPHA1=60.0
+	ALPHA1=10.0
 	CH=1000.
 ! X(1) TO X(4) ARE X-COORDINATES OF THE WING'S FOUR CORNERPOINTS.
 ! B - WING SPAN, VT - FREE STREAM SPEED, B - WING SPAN,
@@ -196,14 +204,11 @@
 
 !
 	STOP
-	END
+end program vlm
 !
 	SUBROUTINE GRID
-	DIMENSION QF(6,14,3),QC(4,13,3),DS(4,13,4),X(4)
-	COMMON/NO1/ DS,X,B,C,S,AR,SN1,CS1
-	COMMON/NO2/ IB,JB,CH,SIGN
-	COMMON/NO4/ QF,QC,DXW
-!
+    use com2
+    use com3
 	PAY=3.141592654
 ! X(1) - IS ROOT L.E., X(2) TIP L.E., X(3) TIP T.E., AND X(4) IS ROOT T.E.
 ! IB: NO. OF CHORDWISE BOXES, JB: NO. OF SPANWISE BOXES
@@ -321,12 +326,8 @@
 	END
 !
 	SUBROUTINE WING(X,Y,Z,GAMA,U,V,W,ONOFF,I1,J1)
-	DIMENSION GAMA(4,13),QF(6,14,3),A1(5,13)
-	DIMENSION DS(4,13,4)
-	COMMON/NO1/ DS
-	COMMON/NO2/ IB,JB,CH,SIGN
-	COMMON/NO3/ A1
-	COMMON/NO4/ QF
+    use com2
+	real :: GAMA(4,13)
 !
 ! CALCULATES INDUCED VELOCITY AT A POINT (X,Y,Z), DUE TO VORTICITY
 ! DISTRIBUTION GAMA(I,J), OF SEMI-CONFIGURATION - IN A WING FIXED
