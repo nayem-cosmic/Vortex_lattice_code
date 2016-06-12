@@ -209,7 +209,7 @@ subroutine grid
         do i=1,ib1
             qf(i,j,1)=(xLe+dx*(i-0.75))*cs1
             qf(i,j,2)=yLe
-            qf(i,j,3)=-qf(i,j,1)*sn1+ch
+            qf(i,j,3)=-qf(i,j,1)*sn1/cs1+ch
         end do
 
 ! wake far field points
