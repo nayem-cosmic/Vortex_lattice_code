@@ -178,12 +178,12 @@ program vlm
 ! end of program
 
 ! formats
-101 format(1h ,/,20x,'Wing lift distribution calculation (with ground effect)',/,20x,56('-'))
-102 format(1h ,/,10x,'Alpha:',f10.2,8x,'B: ',f10.2,8x,'C: ',f13.2,/,10x,'S: ', &
+101 format(20x,'Wing lift distribution calculation (with ground effect)',/,20x,56('-'))
+102 format(10x,'Alpha:',f10.2,8x,'B: ',f10.2,8x,'C: ',f13.2,/,10x,'S: ', &
 & f10.2,8x,'AR: ',f10.2,8x,'V(inf): ',f10.2,/,10x,'IB: ',i10,8x,'JB: ',i10,8x,'L.E. Height: ', f8.2,/)
-103 format(1h ,i3,3x,f10.3,4(f12.3),3x,4(f12.3))
-104 format(/,1h ,'CL= ',f10.4,2x,'L= ',f10.4,4x,'CM= ',f10.7,3x,'CD= ',f10.4)
-110 format(1h ,/,3x,'J',8x,'DL',28x,'DCP',48x,'Gamma',/,118('=') &
+103 format(i3,3x,f10.3,4(f12.3),3x,4(f12.3))
+104 format(10X,'CL= ',f10.4,2x,'L= ',f10.4,4x,'CM= ',f10.7,3x,'CD= ',f10.4,/)
+110 format(3x,'J',8x,'DL',28x,'DCP',48x,'Gamma',/,118('=') &
 & ,/,24x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',12x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',/,118('='))
 
     stop
