@@ -15,10 +15,10 @@ program vlm
     jb=13
     x(1)=0.
     x(2)=0.
-    x(3)=4.
-    x(4)=4.
-    b=13.
-    vt=20.0
+    x(3)=.5
+    x(4)=.5
+    b=.5
+    vt=80.0
     alpha1=10.0
     ch=1000.
 
@@ -34,7 +34,7 @@ program vlm
             gamma(i,j)=1.0
         end do
     end do
-    ro=1.
+    ro=1.225
     pi=3.141592654
     alpha=alpha1*pi/180.
     sn1=sin(alpha)
@@ -168,7 +168,8 @@ program vlm
     cm=fm/(que*s*c)
 
 ! output
-    write(6,104) cL,fL,cm,cd
+    write(6,104) cL,2*fL,cm,cd
+    write(6,105)
     write(6,110)
     do j=1,jb
         do i=2,ib
@@ -185,6 +186,7 @@ program vlm
 & f10.2,8x,'AR: ',f10.2,8x,'V(inf): ',f10.2,/,10x,'IB: ',i10,8x,'JB: ',i10,8x,'L.E. Height: ', f8.2,/)
 103 format(i3,3x,f10.3,4(f12.3),3x,4(f12.3))
 104 format(10X,'CL= ',f10.4,2x,'L= ',f10.4,4x,'CM= ',f10.7,3x,'CD= ',f10.4,/)
+105 format(30X,'Distribution for One Half Side of the Wing',/,118('='))
 110 format(3x,'J',8x,'DL',28x,'DCP',48x,'Gamma',/,118('=') &
 & ,/,24x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',12x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',/,118('='))
 
@@ -238,7 +240,6 @@ subroutine grid
     s=0.5*(x(3)-x(2)+x(4)-x(1))*b
     c=s/b
     ar=2.*b*b/s
-
     return
 end subroutine grid 
 
