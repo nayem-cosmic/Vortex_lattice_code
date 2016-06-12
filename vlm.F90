@@ -1,433 +1,435 @@
-! PROGRAM No. 13: RECTANGULAR LIFTING SURFACE (VLM)
-! -------------------------------------------------
-! 3D-VLM CODE FOR SIMPLE WING PLANFORMS WITH GROUND EFFECT(BYJOE KATZ,1974).
-module com1
-    real :: gama(4,13),gama1(52),gama1j(5),dL(4,13),dd(4,13),dp(4,13),a(52,52),dw(52),dly(13)
-    integer :: ip(52)
-end module com1
+! 3d-vlm code for simple wing planforms with ground effect(byjoe katz,1974).
 
-module com2
+module com
+    real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),x(4)
     real :: b,c,s,ar,sn1,cs1,sign,ch,dxw
     integer :: ib,jb
-    real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13)
-end module com2
+end module com
 
-module com3
-    real :: x(4)
-end module com3
-
-! ==========
-! INPUT DATA
-! ==========
 program vlm
-    use com1
-    use com2
-    use com3
-	IB=4
-	JB=13
-	X(1)=0.
-	X(2)=0.
-	X(3)=4.
-	X(4)=4.
-	B=13.
-	VT=10.0
-	ALPHA1=10.0
-	CH=1000.
-! X(1) TO X(4) ARE X-COORDINATES OF THE WING'S FOUR CORNERPOINTS.
-! B - WING SPAN, VT - FREE STREAM SPEED, B - WING SPAN,
-! CH - HEIGHT ABOVE GROUND
+    use com
+    real :: gama(4,13),dl(4,13),dd(4,13),dp(4,13),a(52,52),gama1(52),gama1j(5),dw(52),dly(13)
+    integer :: ip(52)
 
-! CONSTANTS
-	DXW=100.0*B
-	DO 1 I=1,IB
-	DO 1 J=1,JB
-!	  GAMA(I,J)=1.0 IS REQUIRED FOR INFLUENCE MATRIX CALCULATIONS.
-1     GAMA(I,J)=1.0
-	RO=1.
-	PAY=3.141592654
-	ALPHA=ALPHA1*PAY/180.
-	SN1=SIN(ALPHA)
-	CS1=COS(ALPHA)
-	IB1=IB+1
-	IB2=IB+2
-	JB1=JB+1
+    ib=4
+    jb=13
+    x(1)=0.
+    x(2)=0.
+    x(3)=4.
+    x(4)=4.
+    b=13.
+    vt=20.0
+    alpha1=10.0
+    ch=1000.
 
-! =============
-! WING GEOMETRY
-! =============
+! x(1) to x(4) are x-coordinates of the wing's four cornerpoints.
+! b - wing span, vt - free stream speed, b - wing span,
+! ch - height above ground
 
-	CALL GRID
-	WRITE(6,101)
-	WRITE(6,102) ALPHA1,B,C,S,AR,VT,IB,JB,CH
+! constants
+    dxw=100.0*b
+    do  i=1,ib
+        do  j=1,jb
+! gama(i,j)=1.0 is required for influence matrix calculations.
+            gama(i,j)=1.0
+        end do
+    end do
+    ro=1.
+    pi=3.141592654
+    alpha=alpha1*pi/180.
+    sn1=sin(alpha)
+    cs1=cos(alpha)
+    ib1=ib+1
+    ib2=ib+2
+    jb1=jb+1
 
-! ========================
-! AERODYNAMIC CALCULATIONS
-! ========================
+! wing geometry
+    call grid
+    write(6,101)
+    write(6,102) alpha1,b,c,s,ar,vt,ib,jb,ch
 
-! INFLUENCE COEFFICIENTS CALCULATION
+! aerodynamic calculations
+! influence coefficients calculation
+    k=0
+    do i=1,ib
+        do j=1,jb
+            sign=0.0
+            k=k+1
+            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gama,u,v,w,1.0,i,j)
+            l=0
+            do i1=1,ib
+                do j1=1,jb
+                    l=l+1
+! a(k,l) - is the normal velocity component due to a unit vortex
+! lattice.
+                    a(k,l)=a1(i1,j1)
+                end do
+            end do
+! add influence of wing's other half
+            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gama,u,v,w,1.0,i,j)
+            l=0
+            do i1=1,ib
+                do j1=1,jb
+                    l=l+1
+                    a(k,l)=a(k,l)+a1(i1,j1)
+                end do
+            end do
+            if(ch.gt.100.0) goto 12
+! add influence of mirror image (due to ground)
+            sign=10.0
+            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gama,u,v,w,1.0,i,j)
+            l=0
+            do i1=1,ib
+                do j1=1,jb
+                    l=l+1
+                    a(k,l)=a(k,l)+a1(i1,j1)
+                end do
+            end do
+! add mirror image influence of wing's other half.
+            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gama,u,v,w,1.0,i,j)
+            l=0
+            do i1=1,ib
+                do j1=1,jb
+                    l=l+1
+                    a(k,l)=a(k,l)+a1(i1,j1)
+                end do
+            end do
+            sign=0.0
 
-	K=0
-	DO 14 I=1,IB
-	DO 14 J=1,JB
-	SIGN=0.0
-	K=K+1
-	CALL WING(QC(I,J,1),QC(I,J,2),QC(I,J,3),GAMA,U,V,W,1.0,I,J)
-	L=0
-	DO 10 I1=1,IB
-	DO 10 J1=1,JB
-	L=L+1
-! A(K,L) - IS THE NORMAL VELOCITY COMPONENT DUE TO A UNIT VORTEX
-! LATTICE.
-10      A(K,L)=A1(I1,J1)
-! ADD INFLUENCE OF WING'S OTHER HALF
-	CALL WING(QC(I,J,1),-QC(I,J,2),QC(I,J,3),GAMA,U,V,W,1.0,I,J)
-	L=0
-	DO 11 I1=1,IB
-	DO 11 J1=1,JB
-	L=L+1
-11      A(K,L)=A(K,L)+A1(I1,J1)
-	IF(CH.GT.100.0) GOTO 12
-! ADD INFLUENCE OF MIRROR IMAGE (DUE TO GROUND)
-	SIGN=10.0
-	CALL WING(QC(I,J,1),QC(I,J,2),-QC(I,J,3),GAMA,U,V,W,1.0,I,J)
-	L=0
-	DO 8 I1=1,IB
-	DO 8 J1=1,JB
-	L=L+1
-8       A(K,L)=A(K,L)+A1(I1,J1)
-! ADD MIRROR IMAGE INFLUENCE OF WING'S OTHER HALF.
-	CALL WING(QC(I,J,1),-QC(I,J,2),-QC(I,J,3),GAMA,U,V,W,1.0,I,J)
-	L=0
-	DO 9 I1=1,IB
-	DO 9 J1=1,JB
-	L=L+1
-9       A(K,L)=A(K,L)+A1(I1,J1)
-	SIGN=0.0
-12      CONTINUE
+12  continue
 
-13      CONTINUE
+! calculate wing geometrical downwash
+            uinf=vt
+            vinf=0.0
+            winf=0.0
 
-! CALCULATE WING GEOMETRICAL DOWNWASH
+! this is the general formulation for right hand side.
+            dw(k)=-(uinf*ds(i,j,1)+vinf*ds(i,j,2)+winf*ds(i,j,3))
+        end do
+    end do
+! solution of the problem: dw(i)=a(i,j)*gama(i)
+    k1=ib*jb
+    do k=1,k1
+         gama1(k)=dw(k)
+    end do
 
-	UINF=VT
-	VINF=0.0
-	WINF=0.0
-! THIS IS THE GENERAL FORMULATION FOR RIGHT HAND SIDE.
-	DW(K)=-(UINF*DS(I,J,1)+VINF*DS(I,J,2)+WINF*DS(I,J,3))
-14      CONTINUE
-!
-! SOLUTION OF THE PROBLEM: DW(I)=A(I,J)*GAMA(I)
-!
-	K1=IB*JB
-	DO 15 K=1,K1
-15      GAMA1(K)=DW(K)
-	CALL DECOMP(K1,52,A,IP)
-16      CONTINUE
-	CALL SOLVER(K1,52,A,GAMA1,IP)
-! HERE * THE SAME ARRAY SIZE IS REQUIRED,
-! AS SPECIFIED IN THE BEGINNING OF THE CODE
-!
-! WING VORTEX LATTICE LISTING
-!
-	K=0
-	DO 17 I=1,IB
-	DO 17 J=1,JB
-	K=K+1
-17      GAMA(I,J)=GAMA1(K)
-!
-! ==================
-! FORCES CALCULATION
-! ==================
-!
-	FL=0.
-	FD=0.
-	FM=0.
-	QUE=0.5*RO*VT*VT
-	DO 20 J=1,JB
-	DLY(J)=0.
+    call decomp(k1,52,a,ip)
+    call solver(k1,52,a,gama1,ip)
+!           here   *   the same array size is required,
+! as specified in the beginning of the code
 
+! wing vortex lattice listing
+    k=0
+    do i=1,ib
+        do j=1,jb
+            k=k+1
+            gama(i,j)=gama1(k)
+        end do
+    end do
 
+! forces calculation
+    fl=0.
+    fd=0.
+    fm=0.
+    que=0.5*ro*vt*vt
+    do j=1,jb
+        dly(j)=0.
+        do i=1,ib
+            if(i.eq.1) gamaij=gama(i,j)
+            if(i.gt.1) gamaij=gama(i,j)-gama(i-1,j)
+            dym=qf(i,j+1,2)-qf(i,j,2)
+            dl(i,j)=ro*vt*gamaij*dym
 
-	DO 20 I=1,IB
-	IF(I.EQ.1) GAMAIJ=GAMA(I,J)
-	IF(I.GT.1) GAMAIJ=GAMA(I,J)-GAMA(I-1,J)
-	DYM=QF(I,J+1,2)-QF(I,J,2)
-	DL(I,J)=RO*VT*GAMAIJ*DYM
-! INDUCED DRAG CALCULATION
-	CALL WING(QC(I,J,1),QC(I,J,2),QC(I,J,3),GAMA,U1,V1,W1,0.0,I,J)
-	CALL WING(QC(I,J,1),-QC(I,J,2),QC(I,J,3),GAMA,U2,V2,W2,0.0,I,J)
-	IF(CH.GT.100.0) GOTO 194
-	CALL WING(QC(I,J,1),QC(I,J,2),-QC(I,J,3),GAMA,U3,V3,W3,0.0,I,J)
-	CALL WING(QC(I,J,1),-QC(I,J,2),-QC(I,J,3),GAMA,U4,V4,W4,0.0,I,J)
-	GOTO 195
-194     W3=0.
-	W4=0.
-195     WIND=W1+W2-W3-W4
-! ADD INFLUENCE OF MIRROR IMAGE (GROUND).
-	ALFI=-WIND/VT
-	DD(I,J)=RO*DYM*VT*GAMAIJ*ALFI
-!
-	DP(I,J)=DL(I,J)/DS(I,J,4)/QUE
-	DLY(J)=DLY(J)+DL(I,J)
-	FL=FL+DL(I,J)
-	FD=FD+DD(I,J)
-	FM=FM+DL(I,J)*(QF(I,J,1)-X(1))
+! induced drag calculation
+            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gama,u1,v1,w1,0.0,i,j)
+            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gama,u2,v2,w2,0.0,i,j)
+            if(ch.gt.100.0) goto 194
+            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gama,u3,v3,w3,0.0,i,j)
+            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gama,u4,v4,w4,0.0,i,j)
+            goto 195
+194         w3=0.
+            w4=0.
+195         wind=w1+w2-w3-w4
+! add influence of mirror image (ground).
 
-20      CONTINUE
-	CL=FL/(QUE*S)
-	CD=FD/(QUE*S)
-	CM=FM/(QUE*S*C)
-!
-! OUTPUT
-!
-	WRITE(6,104) CL,FL,CM,CD
-	WRITE(6,110)
-	DO 21 J=1,JB
-	DO 211 I=2,IB
-211     GAMA1J(I)=GAMA(I,J)-GAMA(I-1,J)
-	DLYJ=DLY(J)/B*JB
-21      WRITE(6,103) J,DLYJ,DP(1,J),DP(2,J),DP(3,J),DP(4,J),GAMA(1,J),GAMA1J(2),GAMA1J(3),GAMA1J(4)
-!
-! END OF PROGRAM
-100     CONTINUE
+            dd(i,j)=-ro*dym*gamaij*wind
+            dp(i,j)=dl(i,j)/ds(i,j,4)/que
+            dly(j)=dly(j)+dl(i,j)
+            fl=fl+dl(i,j)
+            fd=fd+dd(i,j)
+            fm=fm+dl(i,j)*(qf(i,j,1)-x(1))
+        end do
+    end do
 
-!
-! FORMATS
-!
-101	 FORMAT(1H ,/,20X,'WING LIFT DISTRIBUTION CALCULATION (WITH GROUND EFFECT)',/,20X,56('-'))
-102	 FORMAT(1H ,/,10X,'ALFA:',F10.2,8X,'B :',F10.2,8X,'C :',F13.2,/,10X,'S :', &
-& F10.2,8X,'AR :',F10.2,8X,'V(INF) :',F10.2,/,10X,'IB :',I10,8X,'JB :',I10,8X,'L.E. HEIGHT:', F8.2,/)
-103	 FORMAT(1H ,I3,3X,F10.3,4(F12.3),3X,4(F12.3))
-104	 FORMAT(/,1H ,'CL=',F10.4,2X,'L=',F10.4,4X,'CM=',F10.7,3X,'CD=',F10.4)
-110      FORMAT(1H ,/,3X,'J',8X,'DL',28X,'DCP',48X,'GAMA',/,118('=') &
-& ,/,24X,'I=1',9X,'I=2',9X,'I=3',9X,'I=4',12X,'I=1',9X,'I=2',9X,'I=3',9X,'I=4',/,118('='))
+    cl=fl/(que*s)
+    cd=fd/(que*s)
+    cm=fm/(que*s*c)
 
-!
-	STOP
+! output
+    write(6,104) cl,fl,cm,cd
+    write(6,110)
+    do j=1,jb
+        do i=2,ib
+            gama1j(i)=gama(i,j)-gama(i-1,j)
+        end do
+        dlyj=dly(j)/b*jb
+        write(6,103) j,dlyj,dp(1,j),dp(2,j),dp(3,j),dp(4,j),gama(1,j),gama1j(2),gama1j(3),gama1j(4)
+    end do
+! end of program
+
+! formats
+101 format(1h ,/,20x,'Wing lift distribution calculation (with ground effect)',/,20x,56('-'))
+102 format(1h ,/,10x,'Alpha:',f10.2,8x,'B: ',f10.2,8x,'C: ',f13.2,/,10x,'S: ', &
+& f10.2,8x,'AR: ',f10.2,8x,'V(inf): ',f10.2,/,10x,'IB: ',i10,8x,'JB: ',i10,8x,'L.E. Height: ', f8.2,/)
+103 format(1h ,i3,3x,f10.3,4(f12.3),3x,4(f12.3))
+104 format(/,1h ,'CL= ',f10.4,2x,'L= ',f10.4,4x,'CM= ',f10.7,3x,'CD= ',f10.4)
+110 format(1h ,/,3x,'J',8x,'DL',28x,'DCP',48x,'Gamma',/,118('=') &
+& ,/,24x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',12x,'I=1',9x,'I=2',9x,'I=3',9x,'I=4',/,118('='))
+
+    stop
 end program vlm
-!
-	SUBROUTINE GRID
-    use com2
-    use com3
-	PAY=3.141592654
-! X(1) - IS ROOT L.E., X(2) TIP L.E., X(3) TIP T.E., AND X(4) IS ROOT T.E.
-! IB: NO. OF CHORDWISE BOXES, JB: NO. OF SPANWISE BOXES
-	IB1=IB+1
-	IB2=IB+2
-	JB1=JB+1
-!
-! WING FIXED VORTICES LOCATION ( QF(I,J,(X,Y,Z))...)
-!
-	DY=B/JB
-	DO 3 J=1,JB1
-	YLE=DY*(J-1)
-	XLE=X(1)+(X(2)-X(1))*YLE/B
-	XTE=X(4)+(X(3)-X(4))*YLE/B
-! XLE AND XTE ARE L.E. AND T.E. X-COORDINATES
-	DX=(XTE-XLE)/IB
-	DO 1 I=1,IB1
-	QF(I,J,1)=(XLE+DX*(I-0.75))*CS1
-	QF(I,J,2)=YLE
-	QF(I,J,3)=-QF(I,J,1)*SN1+CH
-1	CONTINUE
-! WAKE FAR FIELD POINTS
-	QF(IB2,J,1)=XTE+DXW
-	QF(IB2,J,2)=QF(IB1,J,2)
-3	QF(IB2,J,3)=QF(IB1,J,3)
-!
-! WING COLLOCATION POINTS
-!
-	DO 4 J=1,JB
-	DO 4 I=1,IB
-	QC(I,J,1)=(QF(I,J,1)+QF(I,J+1,1)+QF(I+1,J+1,1)+QF(I+1,J,1))/4
-	QC(I,J,2)=(QF(I,J,2)+QF(I,J+1,2)+QF(I+1,J+1,2)+QF(I+1,J,2))/4
-	QC(I,J,3)=(QF(I,J,3)+QF(I,J+1,3)+QF(I+1,J+1,3)+QF(I+1,J,3))/4
-!
-! COMPUTATION OF NORMAL VECTORS
-!
-	CALL PANEL(QF(I,J,1),QF(I,J,2),QF(I,J,3),QF(I+1,J,1),QF(I+1,J,2), &
-& QF(I+1,J,3),QF(I,J+1,1),QF(I,J+1,2),QF(I,J+1,3),QF(I+1,J+1,1),&
-& QF(I+1,J+1,2),QF(I+1,J+1,3),DS(I,J,1),DS(I,J,2),DS(I,J,3),DS(I,J,4))
-4	CONTINUE
-!
-! B -IS SEMI SPAN, C -AV. CHORD, S - AREA
-	S=0.5*(X(3)-X(2)+X(4)-X(1))*B
-	C=S/B
-	AR=2.*B*B/S
-!
-	RETURN
-	END
-!
-	 SUBROUTINE PANEL(X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,X4,Y4,Z4,C1,C2,C3,S)
-! CALCULATION OF PANEL AREA AND NORMAL VECTOR.
-	A1=X2-X3
-	A2=Y2-Y3
-	A3=Z2-Z3
-	B1=X4-X1
-	B2=Y4-Y1
-	B3=Z4-Z1
-! NORMAL VECTOR
-	X=A2*B3-A3*B2
-	Y=B1*A3-A1*B3
-	Z=A1*B2-A2*B1
-	A=SQRT(X**2+Y**2+Z**2)
-	C1=X/A
-	C2=Y/A
-	C3=Z/A
-    
-        S = A/2
-! CALCULATION OF PANEL AREA
-!	E1=X3-X1
-!	E2=Y3-Y1
-!	E3=Z3-Z1
-!	F1=X2-X1
-!	F2=Y2-Y1
-!	F3=Z2-Z1
-! NORMAL AREAS (F*B+B*E)
-!	S11=F2*B3-F3*B2
-!	S12=B1*F3-F1*B3
-!	S13=F1*B2-F2*B1
-!	S21=B2*E3-B3*E2
-!	S22=E1*B3-B1*E3
-!	S23=B1*E2-B2*E1
-!	S=0.5*(SQRT(S11**2+S12**2+S13**2)+SQRT(S21**2+S22**2+S23**2))
-	RETURN
-	END
-!
-	SUBROUTINE VORTEX(X,Y,Z,X1,Y1,Z1,X2,Y2,Z2,GAMA,U,V,W)
-! SUBROUTINE VORTEX CALCULATES THE INDUCED VELOCITY (U,V,W) AT A POI
-! (X,Y,Z) DUE TO A VORTEX ELEMENT VITH STRENGTH GAMA PER UNIT LENGTH
-! POINTING TO THE DIRECTION (X2,Y2,Z2)-(X1,Y1,Z1).
-	PAY=3.141592654
-	RCUT=1.0E-10
-! CALCULATION OF R1 X R2
-	R1R2X=(Y-Y1)*(Z-Z2)-(Z-Z1)*(Y-Y2)
-	R1R2Y=-((X-X1)*(Z-Z2)-(Z-Z1)*(X-X2))
-	R1R2Z=(X-X1)*(Y-Y2)-(Y-Y1)*(X-X2)
-! CALCULATION OF (R1 X R2 )**2
-	SQUARE=R1R2X*R1R2X+R1R2Y*R1R2Y+R1R2Z*R1R2Z
-! CALCULATION OF R0(R1/R(R1)-R2/R(R2))
-	R1=SQRT((X-X1)*(X-X1)+(Y-Y1)*(Y-Y1)+(Z-Z1)*(Z-Z1))
-	R2=SQRT((X-X2)*(X-X2)+(Y-Y2)*(Y-Y2)+(Z-Z2)*(Z-Z2))
-	IF((R1.LT.RCUT).OR.(R2.LT.RCUT).OR.(SQUARE.LT.RCUT)) GOTO 1 
-	R0R1=(X2-X1)*(X-X1)+(Y2-Y1)*(Y-Y1)+(Z2-Z1)*(Z-Z1)
-	R0R2=(X2-X1)*(X-X2)+(Y2-Y1)*(Y-Y2)+(Z2-Z1)*(Z-Z2)
-	COEF=GAMA/(4.0*PAY*SQUARE)*(R0R1/R1-R0R2/R2)
-	U=R1R2X*COEF
-	V=R1R2Y*COEF
-	W=R1R2Z*COEF
-	GOTO 2
-! WHEN POINT (X,Y,Z) LIES ON VORTEX ELEMENT; ITS INDUCED VELOCITY IS
-1   U=0.
-	V=0.
-	W=0.
-2	 CONTINUE
-	RETURN
-	END
-!
-	SUBROUTINE WING(X,Y,Z,GAMA,U,V,W,ONOFF,I1,J1)
-    use com2
-	real :: GAMA(4,13)
-!
-! CALCULATES INDUCED VELOCITY AT A POINT (X,Y,Z), DUE TO VORTICITY
-! DISTRIBUTION GAMA(I,J), OF SEMI-CONFIGURATION - IN A WING FIXED
-! COORDINATE SYSTEM.
-	U=0
-	V=0
-	W=0
-	IB1=IB+1
-	DO 1 I=1,IB1
-	DO 1 J=1,JB
-	! I3 IS WAKE VORTEX COUNTER
-	I3=I
-	IF(I.EQ.IB1) I3=IB
-	VORTIC=GAMA(I3,J)
-	IF(ONOFF.LT.0.1) GOTO 2
-	CALL VORTEX(X,Y,Z,QF(I,J,1),QF(I,J,2),QF(I,J,3),QF(I,J+1,1),QF(I,J1+1,2),QF(I,J+1,3),VORTIC,U1,V1,W1)
-	CALL VORTEX(X,Y,Z,QF(I+1,J+1,1),QF(I+1,J+1,2),QF(I+1,J+1,3),QF(I+1,J,1),QF(I+1,J,2),QF(I+1,J,3),VORTIC,U3,V3,W3)
-2     CALL VORTEX(X,Y,Z,QF(I,J+1,1),QF(I,J+1,2),QF(I,J+1,3),QF(I+1,J+1,1),QF(I+1,J+1,2),QF(I+1,J+1,3),VORTIC,U2,V2,W2)
-	CALL VORTEX(X,Y,Z,QF(I+1,J,1),QF(I+1,J,2),QF(I+1,J,3),QF(I,J,1),QF(I,J,2),QF(I,J,3),VORTIC,U4,V4,W4)
-!
-	U0=U2+U4+(U1+U3)*ONOFF
-	V0=V2+V4+(V1+V3)*ONOFF
-	W0=W2+W4+(W1+W3)*ONOFF
-	A1(I,J)=U0*DS(I1,J1,1)+V0*DS(I1,J1,2)+W0*DS(I1,J1,3)
-	IF(SIGN.GE.1.0) A1(I,J)=U0*DS(I1,J1,1)+V0*DS(I1,J1,2)-W0*DS(I1,J1,3)
-	IF(I.EQ.IB1) A1(IB,J)=A1(IB,J)+A1(IB1,J)
-	U=U+U0
-	V=V+V0
-	W=W+W0
-!
-1	 CONTINUE
-	RETURN
-	END
-!
-	SUBROUTINE DECOMP(N,NDIM,A,IP)
-	REAL A(NDIM,NDIM),T
-	INTEGER IP(NDIM)
-! MATRIX TRIANGULARIZATION BY GAUSSIAN ELIMINATION.
-! N = ORDER OF MATRIX. NDIM = DECLARED DIMENSION OF ARRAY A.
-! A = MATRIX TO BE TRIANGULARIZED.
-! IP(K) , K .LT. N = INDEX OF K-TH PIVOT ROW.
+
+subroutine grid
+    use com,only : qf,qc,ds,x,b,c,s,ar,sn1,cs1,ib,jb,ch,sign,dxw
+    pi=3.141592654
+! x(1) - is root l.e., x(2) tip l.e., x(3) tip t.e., and x(4) is root t.e.
+! ib: no. of chordwise boxes, jb: no. of spanwise boxes
+    ib1=ib+1
+    ib2=ib+2
+    jb1=jb+1
+
+! wing fixed vortices location ( qf(i,j,(x,y,z))...)
+    dy=b/jb
+    do j=1,jb1
+        yle=dy*(j-1)
+        xle=x(1)+(x(2)-x(1))*yle/b
+        xte=x(4)+(x(3)-x(4))*yle/b
+! xle and xte are l.e. and t.e. x-coordinates
+        dx=(xte-xle)/ib
+        do i=1,ib1
+            qf(i,j,1)=(xle+dx*(i-0.75))*cs1
+            qf(i,j,2)=yle
+            qf(i,j,3)=-qf(i,j,1)*sn1+ch
+        end do
+
+! wake far field points
+        qf(ib2,j,1)=xte+dxw
+        qf(ib2,j,2)=qf(ib1,j,2)
+        qf(ib2,j,3)=qf(ib1,j,3)
+    end do
+
+! wing collocation points
+    do j=1,jb
+        do i=1,ib
+            qc(i,j,1)=(qf(i,j,1)+qf(i,j+1,1)+qf(i+1,j+1,1)+qf(i+1,j,1))/4
+            qc(i,j,2)=(qf(i,j,2)+qf(i,j+1,2)+qf(i+1,j+1,2)+qf(i+1,j,2))/4
+            qc(i,j,3)=(qf(i,j,3)+qf(i,j+1,3)+qf(i+1,j+1,3)+qf(i+1,j,3))/4
+
+! computation of normal vectors!
+            call panel(qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i+1,j,1),qf(i+1,j,2), &
+& qf(i+1,j,3),qf(i,j+1,1),qf(i,j+1,2),qf(i,j+1,3),qf(i+1,j+1,1),&
+& qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
+        end do
+    end do
+
+! b -is semi span, c -av. chord, s - area
+    s=0.5*(x(3)-x(2)+x(4)-x(1))*b
+    c=s/b
+    ar=2.*b*b/s
+
+    return
+end subroutine grid 
+
+subroutine panel(x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,c1,c2,c3,sp)
+! calculation of panel area and normal vector.
+    a1=x2-x3
+    a2=y2-y3
+    a3=z2-z3
+    b1=x4-x1
+    b2=y4-y1
+    b3=z4-z1
+
+! normal vector
+    x=a2*b3-a3*b2
+    y=b1*a3-a1*b3
+    z=a1*b2-a2*b1
+    a=sqrt(x**2+y**2+z**2)
+
+    c1=x/a
+    c2=y/a
+    c3=z/a
+
+! panel area 1/2*|a x b|
+    sp = a/2
+
+! calculation of panel area
+!	e1=x3-x1
+!	e2=y3-y1
+!	e3=z3-z1
+!	f1=x2-x1
+!	f2=y2-y1
+!	f3=z2-z1
+! normal areas (f*b+b*e)
+!	s11=f2*b3-f3*b2
+!	s12=b1*f3-f1*b3
+!	s13=f1*b2-f2*b1
+!	s21=b2*e3-b3*e2
+!	s22=e1*b3-b1*e3
+!	s23=b1*e2-b2*e1
+!	s=0.5*(sqrt(s11**2+s12**2+s13**2)+sqrt(s21**2+s22**2+s23**2))
+    return
+end subroutine panel
+
+subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gama,u,v,w)
+! subroutine vortex calculates the induced velocity (u,v,w) at a poi
+! (x,y,z) due to a vortex element vith strength gama per unit length
+! pointing to the direction (x2,y2,z2)-(x1,y1,z1).
+    pi=3.141592654
+    rcut=1.0e-10
+
+! calculation of r1 x r2
+    r1r2x=(y-y1)*(z-z2)-(z-z1)*(y-y2)
+    r1r2y=-((x-x1)*(z-z2)-(z-z1)*(x-x2))
+    r1r2z=(x-x1)*(y-y2)-(y-y1)*(x-x2)
+
+! calculation of (r1 x r2 )**2
+    square=r1r2x*r1r2x+r1r2y*r1r2y+r1r2z*r1r2z
+
+! calculation of r0(r1/r(r1)-r2/r(r2))
+    r1=sqrt((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))
+    r2=sqrt((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))
+    if((r1.lt.rcut).or.(r2.lt.rcut).or.(square.lt.rcut)) goto 1 
+    r0r1=(x2-x1)*(x-x1)+(y2-y1)*(y-y1)+(z2-z1)*(z-z1)
+    r0r2=(x2-x1)*(x-x2)+(y2-y1)*(y-y2)+(z2-z1)*(z-z2)
+    coef=gama/(4.0*pi*square)*(r0r1/r1-r0r2/r2)
+    u=r1r2x*coef
+    v=r1r2y*coef
+    w=r1r2z*coef
+    goto 2
+
+! when point (x,y,z) lies on vortex element; its induced velocity is
+1   u=0.
+    v=0.
+    w=0.
+2   continue
+    return
+end subroutine vortex
+
+subroutine wing(x,y,z,gama,u,v,w,onoff,i1,j1)
+    use com,only : ds,ib,jb,ch,sign,a1,qf
+	real :: gama(4,13)
+
+! calculates induced velocity at a point (x,y,z), due to vorticity
+! distribution gama(i,j), of semi-configuration - in a wing fixed
+! coordinate system.
+    u=0
+    v=0
+    w=0
+    ib1=ib+1
+    do i=1,ib1
+        do j=1,jb
+! i3 is wake vortex counter
+            i3=i
+            if(i.eq.ib1) i3=ib
+            vortic=gama(i3,j)
+            if(onoff.lt.0.1) goto 2
+            call vortex(x,y,z,qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i,j+1,1),qf(i,j1+1,2),qf(i,j+1,3),vortic,u1,v1,w1)
+            call vortex(x,y,z,qf(i+1,j+1,1),qf(i+1,j+1,2),qf(i+1,j+1,3),qf(i+1,j,1),qf(i+1,j,2),qf(i+1,j,3),vortic,u3,v3,w3)
+2           call vortex(x,y,z,qf(i,j+1,1),qf(i,j+1,2),qf(i,j+1,3),qf(i+1,j+1,1),qf(i+1,j+1,2),qf(i+1,j+1,3),vortic,u2,v2,w2)
+            call vortex(x,y,z,qf(i+1,j,1),qf(i+1,j,2),qf(i+1,j,3),qf(i,j,1),qf(i,j,2),qf(i,j,3),vortic,u4,v4,w4)
+
+            u0=u2+u4+(u1+u3)*onoff
+            v0=v2+v4+(v1+v3)*onoff
+            w0=w2+w4+(w1+w3)*onoff
+            a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
+            if(sign.ge.1.0) a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
+            if(i.eq.ib1) a1(ib,j)=a1(ib,j)+a1(ib1,j)
+            u=u+u0
+            v=v+v0
+            w=w+w0
+        end do
+    end do
+
+    return
+end subroutine wing
+
+subroutine decomp(n,ndim,a,ip)
+
+	real :: a(ndim,ndim),t
+    integer :: ip(ndim)
+
+! matrix triangularization by gaussian elimination.
+! n = order of matrix. ndim = declared dimension of array a.
+! a = matrix to be triangularized.
+! ip(k) , k .lt. n = index of k-th pivot row.
+
+    ip(n) = 1
+    do k=1,n
+        if(k.eq.n) goto 5
+        kp1=k+1
+        m=k
+        do  i=kp1, n
+            if( abs(a(i,k)).gt.abs(a(m,k))) m=i
+        end do
+        ip(k) = m
+        if(m.ne.k) ip(n) = -ip(n)
+        t = a(m,k)
+        a(m,k) = a(k,k)
+        a(k,k) = t
+        if(t.eq.0.e0) go to 5
+        do i=kp1, n
+            a(i,k) = -a(i,k)/t
+        end do
+        do j=kp1, n
+            t = a(m,j)
+            a(m,j) = a(k,j)
+            a(k,j) = t
+            if(t .eq. 0.e0) go to 4
+            do i=kp1, n
+                a(i,j) = a(i,j) + a(i,k)*t
+            end do
+4       end do
+5       if(a(k,k) .eq. 0.e0) ip(n) = 0
+    end do
+
+    return
+end subroutine decomp
+
+subroutine solver(n,ndim,a,b,ip)
+
+	real :: a(ndim,ndim), b(ndim), t
+    integer :: ip(ndim)
+
+! solution of linear system, a*x = b.
+! n = order of matrix.
+! ndim = declared dimension of the array a.
+! b = right hand side vector.
+! ip = pivot vector obtained from subroutine decomp.
+! b = solution vector, x.
+
+    if(n.eq.1) goto 9
+    nm1=n-1
+    do k=1,nm1
+        kp1=k+1
+        m = ip(k)
+        t = b(m)
+        b(m) = b(k)
+        b(k) = t
+        do i=kp1, n
+            b(i) = b(i) + a(i,k)*t
+        end do
+    end do
+    do kb=1,nm1
+        km1=n-kb
+        k=km1+1
+        b(k) = b(k)/a(k,k)
+        t = -b(k)
+        do i=1,km1
+            b(i) = b(i) + a(i,k)*t
+        end do
+    end do
+9   b(1) = b(1)/a(1,1)
 
 
-!
-	IP(N) = 1
-	DO 6 K=1,N
-	IF(K.EQ.N) GOTO 5
-	KP1=K+1
-	M=K
-	DO 1 I=KP1, N
-	IF( ABS(A(I,K)).GT.ABS(A(M,K))) M=I
-1	 CONTINUE
-	IP(K) = M
-	IF(M.NE.K) IP(N) = -IP(N)
-	T = A(M,K)
-	A(M,K) = A(K,K)
-	A(K,K) = T
-	IF(T.EQ.0.E0) GO TO 5
-	DO 2 I=KP1, N
-2	A(I,K) = -A(I,K)/T
-	DO 4 J=KP1, N
-	T = A(M,J)
-	A(M,J) = A(K,J)
-	A(K,J) = T
-	IF(T .EQ. 0.E0) GO TO 4
-	DO 3 I=KP1, N
-3	A(I,J) = A(I,J) + A(I,K)*T
-4	CONTINUE
-5	IF(A(K,K) .EQ. 0.E0) IP(N) = 0
-6	CONTINUE
-	RETURN
-	END
-!
-	SUBROUTINE SOLVER(N,NDIM,A,B,IP)
-	REAL A(NDIM,NDIM), B(NDIM), T
-	INTEGER IP(NDIM)
-! SOLUTION OF LINEAR SYSTEM, A*X = B.
-! N = ORDER OF MATRIX.
-! NDIM = DECLARED DIMENSION OF THE ARRAY A.
-! B = RIGHT HAND SIDE VECTOR.
-! IP = PIVOT VECTOR OBTAINED FROM SUBROUTINE DECOMP.
-! B = SOLUTION VECTOR, X.
-!
-	IF(N.EQ.1) GOTO 9
-	NM1=N-1
-	DO 7 K=1,NM1
-	KP1=K+1
-	M = IP(K)
-	T = B(M)
-	B(M) = B(K)
-	B(K) = T
-	DO 7 I=KP1, N
-7	B(I) = B(I) + A(I,K)*T
-	DO 8 KB=1,NM1
-	KM1=N-KB
-	K=KM1+1
-	B(K) = B(K)/A(K,K)
-	T = -B(K)
-	DO 8 I=1,KM1
-8	B(I) = B(I) + A(I,K)*T
-9	B(1) = B(1)/A(1,1)
-	RETURN
-	END
+    return
+end subroutine solver
