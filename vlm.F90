@@ -1,4 +1,4 @@
-! 3d-vlm code for simple wing planforms with ground effect(byjoe katz,1974).
+! 3d-vlm code for simple wing planforms with ground effect(by joe katz,1974).
 
 module com
     real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),x(4)
@@ -8,7 +8,7 @@ end module com
 
 program vlm
     use com
-    real :: gama(4,13),dl(4,13),dd(4,13),dp(4,13),a(52,52),gama1(52),gama1j(5),dw(52),dly(13)
+    real :: gamma(4,13),dL(4,13),dd(4,13),dp(4,13),a(52,52),gamma1(52),gamma1j(5),dw(52),dLy(13)
     integer :: ip(52)
 
     ib=4
@@ -30,8 +30,8 @@ program vlm
     dxw=100.0*b
     do  i=1,ib
         do  j=1,jb
-! gama(i,j)=1.0 is required for influence matrix calculations.
-            gama(i,j)=1.0
+! gamma(i,j)=1.0 is required for influence matrix calculations.
+            gamma(i,j)=1.0
         end do
     end do
     ro=1.
@@ -55,43 +55,43 @@ program vlm
         do j=1,jb
             sign=0.0
             k=k+1
-            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gama,u,v,w,1.0,i,j)
-            l=0
+            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-! a(k,l) - is the normal velocity component due to a unit vortex
+                    L=L+1
+! a(k,L) - is the normal velocity component due to a unit vortex
 ! lattice.
-                    a(k,l)=a1(i1,j1)
+                    a(k,L)=a1(i1,j1)
                 end do
             end do
 ! add influence of wing's other half
-            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gama,u,v,w,1.0,i,j)
-            l=0
+            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
             if(ch.gt.100.0) goto 12
 ! add influence of mirror image (due to ground)
             sign=10.0
-            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gama,u,v,w,1.0,i,j)
-            l=0
+            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
 ! add mirror image influence of wing's other half.
-            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gama,u,v,w,1.0,i,j)
-            l=0
+            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
             sign=0.0
@@ -107,14 +107,14 @@ program vlm
             dw(k)=-(uinf*ds(i,j,1)+vinf*ds(i,j,2)+winf*ds(i,j,3))
         end do
     end do
-! solution of the problem: dw(i)=a(i,j)*gama(i)
+! solution of the problem: dw(i)=a(i,j)*gamma(i)
     k1=ib*jb
     do k=1,k1
-         gama1(k)=dw(k)
+         gamma1(k)=dw(k)
     end do
 
     call decomp(k1,52,a,ip)
-    call solver(k1,52,a,gama1,ip)
+    call solver(k1,52,a,gamma1,ip)
 !           here   *   the same array size is required,
 ! as specified in the beginning of the code
 
@@ -123,57 +123,57 @@ program vlm
     do i=1,ib
         do j=1,jb
             k=k+1
-            gama(i,j)=gama1(k)
+            gamma(i,j)=gamma1(k)
         end do
     end do
 
 ! forces calculation
-    fl=0.
+    fL=0.
     fd=0.
     fm=0.
     que=0.5*ro*vt*vt
     do j=1,jb
-        dly(j)=0.
+        dLy(j)=0.
         do i=1,ib
-            if(i.eq.1) gamaij=gama(i,j)
-            if(i.gt.1) gamaij=gama(i,j)-gama(i-1,j)
+            if(i.eq.1) gammaij=gamma(i,j)
+            if(i.gt.1) gammaij=gamma(i,j)-gamma(i-1,j)
             dym=qf(i,j+1,2)-qf(i,j,2)
-            dl(i,j)=ro*vt*gamaij*dym
+            dL(i,j)=ro*vt*gammaij*dym
 
 ! induced drag calculation
-            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gama,u1,v1,w1,0.0,i,j)
-            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gama,u2,v2,w2,0.0,i,j)
+            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
+            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
             if(ch.gt.100.0) goto 194
-            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gama,u3,v3,w3,0.0,i,j)
-            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gama,u4,v4,w4,0.0,i,j)
+            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u3,v3,w3,0.0,i,j)
+            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u4,v4,w4,0.0,i,j)
             goto 195
 194         w3=0.
             w4=0.
 195         wind=w1+w2-w3-w4
 ! add influence of mirror image (ground).
 
-            dd(i,j)=-ro*dym*gamaij*wind
-            dp(i,j)=dl(i,j)/ds(i,j,4)/que
-            dly(j)=dly(j)+dl(i,j)
-            fl=fl+dl(i,j)
+            dd(i,j)=-ro*dym*gammaij*wind
+            dp(i,j)=dL(i,j)/ds(i,j,4)/que
+            dLy(j)=dLy(j)+dL(i,j)
+            fL=fL+dL(i,j)
             fd=fd+dd(i,j)
-            fm=fm+dl(i,j)*(qf(i,j,1)-x(1))
+            fm=fm+dL(i,j)*(qf(i,j,1)-x(1))
         end do
     end do
 
-    cl=fl/(que*s)
+    cL=fL/(que*s)
     cd=fd/(que*s)
     cm=fm/(que*s*c)
 
 ! output
-    write(6,104) cl,fl,cm,cd
+    write(6,104) cL,fL,cm,cd
     write(6,110)
     do j=1,jb
         do i=2,ib
-            gama1j(i)=gama(i,j)-gama(i-1,j)
+            gamma1j(i)=gamma(i,j)-gamma(i-1,j)
         end do
-        dlyj=dly(j)/b*jb
-        write(6,103) j,dlyj,dp(1,j),dp(2,j),dp(3,j),dp(4,j),gama(1,j),gama1j(2),gama1j(3),gama1j(4)
+        dLyj=dLy(j)/b*jb
+        write(6,103) j,dLyj,dp(1,j),dp(2,j),dp(3,j),dp(4,j),gamma(1,j),gamma1j(2),gamma1j(3),gamma1j(4)
     end do
 ! end of program
 
@@ -201,14 +201,14 @@ subroutine grid
 ! wing fixed vortices location ( qf(i,j,(x,y,z))...)
     dy=b/jb
     do j=1,jb1
-        yle=dy*(j-1)
-        xle=x(1)+(x(2)-x(1))*yle/b
-        xte=x(4)+(x(3)-x(4))*yle/b
+        yLe=dy*(j-1)
+        xLe=x(1)+(x(2)-x(1))*yLe/b
+        xte=x(4)+(x(3)-x(4))*yLe/b
 ! xle and xte are l.e. and t.e. x-coordinates
-        dx=(xte-xle)/ib
+        dx=(xte-xLe)/ib
         do i=1,ib1
-            qf(i,j,1)=(xle+dx*(i-0.75))*cs1
-            qf(i,j,2)=yle
+            qf(i,j,1)=(xLe+dx*(i-0.75))*cs1
+            qf(i,j,2)=yLe
             qf(i,j,3)=-qf(i,j,1)*sn1+ch
         end do
 
@@ -280,9 +280,9 @@ subroutine panel(x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,c1,c2,c3,sp)
     return
 end subroutine panel
 
-subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gama,u,v,w)
+subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gamma,u,v,w)
 ! subroutine vortex calculates the induced velocity (u,v,w) at a poi
-! (x,y,z) due to a vortex element vith strength gama per unit length
+! (x,y,z) due to a vortex element vith strength gamma per unit length
 ! pointing to the direction (x2,y2,z2)-(x1,y1,z1).
     pi=3.141592654
     rcut=1.0e-10
@@ -301,7 +301,7 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gama,u,v,w)
     if((r1.lt.rcut).or.(r2.lt.rcut).or.(square.lt.rcut)) goto 1 
     r0r1=(x2-x1)*(x-x1)+(y2-y1)*(y-y1)+(z2-z1)*(z-z1)
     r0r2=(x2-x1)*(x-x2)+(y2-y1)*(y-y2)+(z2-z1)*(z-z2)
-    coef=gama/(4.0*pi*square)*(r0r1/r1-r0r2/r2)
+    coef=gamma/(4.0*pi*square)*(r0r1/r1-r0r2/r2)
     u=r1r2x*coef
     v=r1r2y*coef
     w=r1r2z*coef
@@ -315,12 +315,12 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gama,u,v,w)
     return
 end subroutine vortex
 
-subroutine wing(x,y,z,gama,u,v,w,onoff,i1,j1)
+subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
     use com,only : ds,ib,jb,ch,sign,a1,qf
-	real :: gama(4,13)
+	real :: gamma(4,13)
 
 ! calculates induced velocity at a point (x,y,z), due to vorticity
-! distribution gama(i,j), of semi-configuration - in a wing fixed
+! distribution gamma(i,j), of semi-configuration - in a wing fixed
 ! coordinate system.
     u=0
     v=0
@@ -331,7 +331,7 @@ subroutine wing(x,y,z,gama,u,v,w,onoff,i1,j1)
 ! i3 is wake vortex counter
             i3=i
             if(i.eq.ib1) i3=ib
-            vortic=gama(i3,j)
+            vortic=gamma(i3,j)
             if(onoff.lt.0.1) goto 2
             call vortex(x,y,z,qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i,j+1,1),qf(i,j1+1,2),qf(i,j+1,3),vortic,u1,v1,w1)
             call vortex(x,y,z,qf(i+1,j+1,1),qf(i+1,j+1,2),qf(i+1,j+1,3),qf(i+1,j,1),qf(i+1,j,2),qf(i+1,j,3),vortic,u3,v3,w3)
