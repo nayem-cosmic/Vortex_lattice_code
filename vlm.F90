@@ -2,26 +2,24 @@
 
 module com
     real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),x(4)
-    real :: b,c,s,ar,sn1,cs1,isign,ch,dxw
-    integer :: ib,jb
+    real :: b,c,s,ar,sn1,cs1,ch,dxw
+    integer :: ib,jb,isign
 end module com
 
 program vlm
     use com
     real :: gamma(4,13),dL(4,13),dd(4,13),dp(4,13),a(52,52),gamma1(52),gamma1j(5),dw(52),dLy(13)
     integer :: ip(52)
-
     ib=4
     jb=13
     x(1)=0.
     x(2)=0.
-    x(3)=.5
-    x(4)=.5
-    b=.5
-    vt=80.0
-    alpha1=10.0
+    x(3)=1.
+    x(4)=1.
+    b=3
+    vt=5.0
+    alpha1=5.0
     ch=1000.
-
 ! x(1) to x(4) are x-coordinates of the wing's four cornerpoints.
 ! b - wing span, vt - free stream speed, b - wing span,
 ! ch - height above ground
@@ -34,8 +32,8 @@ program vlm
             gamma(i,j)=1.0
         end do
     end do
-    ro=1.225
-    pi=3.141592654
+    ro=1000.
+    pi=4.*atan(1.)
     alpha=alpha1*pi/180.
     sn1=sin(alpha)
     cs1=cos(alpha)
@@ -195,7 +193,7 @@ end program vlm
 
 subroutine grid
     use com,only : qf,qc,ds,x,b,c,s,ar,sn1,cs1,ib,jb,ch,isign,dxw
-    pi=3.141592654
+    pi=4.*atan(1.)
 ! x(1) - is root l.e., x(2) tip l.e., x(3) tip t.e., and x(4) is root t.e.
 ! ib: no. of chordwise boxes, jb: no. of spanwise boxes
     ib1=ib+1
@@ -287,7 +285,7 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gamma,u,v,w)
 ! subroutine vortex calculates the induced velocity (u,v,w) at a poi
 ! (x,y,z) due to a vortex element vith strength gamma per unit length
 ! pointing to the direction (x2,y2,z2)-(x1,y1,z1).
-    pi=3.141592654
+    pi=4.*atan(1.)
     rcut=1.0e-10
 
 ! calculation of r1 x r2
