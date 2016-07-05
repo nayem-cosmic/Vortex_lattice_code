@@ -6,8 +6,8 @@
 ! c : chord length, ar : wing aspect ratio, ch : height above ground
 ! dxw : wake length, alpha : angle of attack
 ! phi : dihedral angle, lambda : sweep angle
+! croot : chord length at wing root, ctip : chord length at wing tip
 ! qf : vortex ring corner points, qc : collocation points, ds : area vector
-! xx(1) to xx(4): x-coordinates of the wing's four corner points
 ! a1 : auxiliary influence coefficient which is needed for calculation
 ! gamma : circulation, dl : partial lift force, dd : partial drag force
 ! dp : pressure difference, a : influence coefficient
@@ -16,8 +16,9 @@
 module com
     integer, parameter :: imax=10, jmax=30, max=imax*jmax
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,ch,dxw,alpha,phi,lambda,pi=4.*atan(1.)
-    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax),xx(4)
+    real :: b,c,s,ar,ch,dxw,alpha,phi,lambda,croot,ctip,pi=4.*atan(1.)
+
+    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
 
 program main
@@ -30,20 +31,18 @@ program main
     open(11, file='mesh.txt')
 
 
-    ib=7
-    jb=23
+    ib=4
+    jb=13
     ib1=ib+1
     ib2=ib+2
     jb1=jb+1
-    xx(1)=0.0
-    xx(2)=1.0
-    xx(3)=3.0
-    xx(4)=4.0
+    croot = 4.
+    ctip = 4.
     b=13.0
     vt=5.0
     alpha1=5.0
     alpha=alpha1*pi/180.0
-    phi1=50.
+    phi1=0.
     phi=phi1*pi/180.0
     lambda1 = 0.
     lambda = lambda1*pi/180
@@ -178,7 +177,7 @@ program main
             dly(j)=dly(j)+dl(i,j)
             fl=fl+dl(i,j)
             fd=fd+dd(i,j)
-            fm=fm+dl(i,j)*(qf(i,j,1)-xx(1))
+            fm=fm+dl(i,j)*(qf(i,j,1)-0)
         end do
     end do
     cl=fl/(que*s)
@@ -215,8 +214,8 @@ subroutine grid
     dy=b/jb
     do j=1,jb1
         yle=dy*(j-1)
-        xle=xx(1)+(xx(2)-xx(1))*yle/b
-        xte=xx(4)+(xx(3)-xx(4))*yle/b
+        xle=0+((croot-ctip)/2)*yle/b
+        xte=croot+((ctip-croot)/2)*yle/b
         dx=(xte-xle)/ib
 
         do i=1,ib1
@@ -232,8 +231,8 @@ subroutine grid
 ! Generating coordinate points for mesh plotting
     do j=1,jb1
         yle=dy*(j-1)
-        xle=xx(1)+(xx(2)-xx(1))*yle/b
-        xte=xx(4)+(xx(3)-xx(4))*yle/b
+        xle=0+((croot-ctip)/2)*yle/b
+        xte=croot+((ctip-croot)/2)*yle/b
         dx=(xte-xle)/ib
         if(mod(j,2).ne.0)then
             do i=1,ib1
@@ -256,8 +255,8 @@ subroutine grid
             if(mod(i,2).ne.0)then
                 do j=1,jb1
                     yle=dy*(j-1)
-                    xle=xx(1)+(xx(2)-xx(1))*yle/b
-                    xte=xx(4)+(xx(3)-xx(4))*yle/b
+                    xle=0+((croot-ctip)/2)*yle/b
+                    xte=croot+((ctip-croot)/2)*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
                     yme = yle*cos(phi)
@@ -267,8 +266,8 @@ subroutine grid
             else
                 do j=jb1,1,-1
                     yle=dy*(j-1)
-                    xle=xx(1)+(xx(2)-xx(1))*yle/b
-                    xte=xx(4)+(xx(3)-xx(4))*yle/b
+                    xle=0+((croot-ctip)/2)*yle/b
+                    xte=croot+((ctip-croot)/2)*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
                     yme = yle*cos(phi)
@@ -280,8 +279,8 @@ subroutine grid
             if(mod(i,2).eq.0)then
                 do j=1,jb1
                     yle=dy*(j-1)
-                    xle=xx(1)+(xx(2)-xx(1))*yle/b
-                    xte=xx(4)+(xx(3)-xx(4))*yle/b
+                    xle=0+((croot-ctip)/2)*yle/b
+                    xte=croot+((ctip-croot)/2)*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
                     yme = yle*cos(phi)
@@ -291,8 +290,8 @@ subroutine grid
             else
                 do j=jb1,1,-1
                     yle=dy*(j-1)
-                    xle=xx(1)+(xx(2)-xx(1))*yle/b
-                    xte=xx(4)+(xx(3)-xx(4))*yle/b
+                    xle=0+((croot-ctip)/2)*yle/b
+                    xte=croot+((ctip-croot)/2)*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
                     yme = yle*cos(phi)
@@ -317,7 +316,7 @@ qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
         end do
     end do
 
-    s=0.5*(xx(3)-xx(2)+xx(4)-xx(1))*b
+    s=0.5*(croot+ctip)*b
     c=s/b
     ar=2.0*b*b/s
 
