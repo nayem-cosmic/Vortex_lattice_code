@@ -5,6 +5,7 @@
 ! ib : number of chordwise panels, jb : number of spanwise panels, b : wing span
 ! c : chord length, ar : wing aspect ratio, ch : height above ground
 ! dxw : wake length, alpha : angle of attack
+! phi : dihedral angle, lambda : sweep angle
 ! qf : vortex ring corner points, qc : collocation points, ds : area vector
 ! xx(1) to xx(4): x-coordinates of the wing's four corner points
 ! a1 : auxiliary influence coefficient which is needed for calculation
@@ -15,7 +16,7 @@
 module com
     integer, parameter :: imax=10, jmax=30, max=imax*jmax
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,ch,dxw,alpha,pi=4.*atan(1.)
+    real :: b,c,s,ar,ch,dxw,alpha,phi,lambda,pi=4.*atan(1.)
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax),xx(4)
 end module com
 
@@ -35,13 +36,17 @@ program main
     ib2=ib+2
     jb1=jb+1
     xx(1)=0.0
-    xx(2)=2.0
-    xx(3)=2.0
+    xx(2)=1.0
+    xx(3)=3.0
     xx(4)=4.0
     b=13.0
     vt=5.0
     alpha1=5.0
     alpha=alpha1*pi/180.0
+    phi1=50.
+    phi=phi1*pi/180.0
+    lambda1 = 0.
+    lambda = lambda1*pi/180
 ! If ch<=100, ground effect is counted
     ch= 1000 
 ! constants
@@ -216,8 +221,8 @@ subroutine grid
 
         do i=1,ib1
             qf(i,j,1)= (xle+dx*(i-0.75))*cos(alpha)
-            qf(i,j,2)= yle
-            qf(i,j,3)= -qf(i,j,1)*tan(alpha)+ch
+            qf(i,j,2)= yle*cos(phi)
+            qf(i,j,3)= -qf(i,j,1)*tan(alpha)+qf(i,j,2)*tan(phi)+ch
         end do
         qf(ib2,j,1)=xte+dxw
         qf(ib2,j,2)=qf(ib1,j,2)
@@ -233,15 +238,15 @@ subroutine grid
         if(mod(j,2).ne.0)then
             do i=1,ib1
                 xme = (xle+dx*(i-1))*cos(alpha)
-                yme = yle
-                zme = -xme*tan(alpha)
+                yme = yle*cos(phi)
+                zme = -xme*tan(alpha)+yme*tan(phi)
                 write(11,105) xme, yme, zme
             end do
         else
             do i=ib1,1,-1
                 xme = (xle+dx*(i-1))*cos(alpha)
-                yme = yle
-                zme = -xme*tan(alpha)
+                yme = yle*cos(phi)
+                zme = -xme*tan(alpha)+yme*tan(phi)
                 write(11,105) xme, yme, zme
             end do
         end if
@@ -255,8 +260,8 @@ subroutine grid
                     xte=xx(4)+(xx(3)-xx(4))*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle
-                    zme = -xme*tan(alpha)
+                    yme = yle*cos(phi)
+                    zme = -xme*tan(alpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
@@ -266,8 +271,8 @@ subroutine grid
                     xte=xx(4)+(xx(3)-xx(4))*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle
-                    zme = -xme*tan(alpha)
+                    yme = yle*cos(phi)
+                    zme = -xme*tan(alpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
@@ -279,8 +284,8 @@ subroutine grid
                     xte=xx(4)+(xx(3)-xx(4))*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle
-                    zme = -xme*tan(alpha)
+                    yme = yle*cos(phi)
+                    zme = -xme*tan(alpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
@@ -290,8 +295,8 @@ subroutine grid
                     xte=xx(4)+(xx(3)-xx(4))*yle/b
                     dx=(xte-xle)/ib
                     xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle
-                    zme = -xme*tan(alpha)
+                    yme = yle*cos(phi)
+                    zme = -xme*tan(alpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
