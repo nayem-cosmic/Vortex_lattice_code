@@ -1,22 +1,23 @@
-! 3d-vlm code for simple wing planforms with ground effect.
+! 3d-VLM code for simple wing planforms with ground effect.
 ! This program is modified version of program written by Joe Katz, 1974.
 
 ! imax : maximum number of chordwise panels, jmax : maximum number of spanwise panels
-! ib : number of chordwise panels, jb : number of spanwise panels, b : wing span
+! ib : number of chordwise panels, jb : number of spanwise panels, b : wing semi span
 ! c : chord length, ar : wing aspect ratio, ch : height above ground
-! dxw : wake length, alpha : angle of attack
-! phi : dihedral angle, lambda : sweep angle
+! dxw : wake length, aLpha : angle of attack
+! phi : dihedral angle, xLambda : sweep angle
 ! croot : chord length at wing root, ctip : chord length at wing tip
 ! qf : vortex ring corner points, qc : collocation points, ds : area vector
 ! a1 : auxiliary influence coefficient which is needed for calculation
-! gamma : circulation, dl : partial lift force, dd : partial drag force
+! gamma : circulation, dL : partial lift force, dd : partial drag force
 ! dp : pressure difference, a : influence coefficient
 
 
 module com
     integer, parameter :: imax=10, jmax=30, max=imax*jmax
+    real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,ch,dxw,alpha,phi,lambda,croot,ctip,pi=4.*atan(1.)
+    real :: b,c,s,ar,ch,dxw,aLpha,phi,xLambda,croot,ctip
 
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
@@ -24,30 +25,45 @@ end module com
 program main
     use com
 
-    real :: gamma(imax,jmax),dl(imax,jmax),dd(imax,jmax),dp(imax,jmax),a(max,max),gamma1(max),dw(max),dly(jmax)
+    real :: gamma(imax,jmax),dL(imax,jmax),dd(imax,jmax),dp(imax,jmax),a(max,max), &
+gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     integer :: ip(max)
 
     open(10, file='summary.txt')
     open(11, file='mesh.txt')
+    open(12, file='gamma.txt')
+    open(13, file='dp_coeff.txt')
+    open(14, file='d_lift_span.txt')
+    open(15, file='d_drag_span.txt')
+    open(16, file='d_lift_chord.txt')
+    open(17, file='d_drag_chord.txt')
 
+! Write heading of files
+    write(12,106)
+    write(13,108)
+    write(14,110)
+    write(15,112)
+    write(16,114)
+    write(17,116)
 
-    ib=4
-    jb=13
+    ib=5
+    jb=15
     ib1=ib+1
     ib2=ib+2
     jb1=jb+1
-    croot = 4.
-    ctip = 4.
-    b=13.0
+    croot=1.5
+    ctip=.5
+    b=1.415
     vt=5.0
-    alpha1=5.0
-    alpha=alpha1*pi/180.0
+    aLpha1=5.354
+    aLpha=aLpha1*pi/180.0
     phi1=0.
     phi=phi1*pi/180.0
-    lambda1 = 0.
-    lambda = lambda1*pi/180
+    xLambda1=53.54
+    xLambda=xLambda1*pi/180
+
 ! If ch<=100, ground effect is counted
-    ch= 1000 
+    ch=1000. 
 ! constants
     dxw=100.0*b
     ro=1.0
@@ -72,23 +88,23 @@ program main
             k=k+1
             isign=0
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            l=0
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-! a(k,l)-is the normal velocity component due to a unit vortex lattice
-                    a(k,l)=a1(i1,j1)
+                    L=L+1
+! a(k,L)-is the normal velocity component due to a unit vortex lattice
+                    a(k,L)=a1(i1,j1)
                 end do
             end do
 
 ! add influence of wing's other half
             isign=1
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            l=0
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
 
@@ -96,22 +112,22 @@ program main
 ! add influence of mirror image (due to ground)
             isign=2
             call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            l=0
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
 
 ! add mirror image influence of wing's other half
             isign=3
             call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            l=0
+            L=0
             do i1=1,ib
                 do j1=1,jb
-                    l=l+1
-                    a(k,l)=a(k,l)+a1(i1,j1)
+                    L=L+1
+                    a(k,L)=a(k,L)+a1(i1,j1)
                 end do
             end do
 
@@ -145,18 +161,19 @@ program main
     end do
 
 ! forces calculation
-    fl=0.0
+    fL=0.0
     fd=0.0
     fm=0.0
     que=0.5*ro*vt*vt
 
     do j=1,jb
-        dly(j)=0.
+        dLy(j)=0.
+        ddy(j)=0.
         do i=1,ib
             if(i.eq.1) gammaij=gamma(i,j)
             if(i.gt.1) gammaij=gamma(i,j)-gamma(i-1,j)
             dym=qf(i,j+1,2)-qf(i,j,2)
-            dl(i,j)=ro*vt*gammaij*dym
+            dL(i,j)=ro*vt*gammaij*dym
 
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
@@ -172,35 +189,71 @@ program main
 
 195         wind=w1+w2-w3-w4
 
-            dd(i,j)=-ro*dym*gammaij*wind
-            dp(i,j)=dl(i,j)/ds(i,j,4)/que
-            dly(j)=dly(j)+dl(i,j)
-            fl=fl+dl(i,j)
+            dd(i,j)=-ro*gammaij*wind*dym
+            dp(i,j)=dL(i,j)/ds(i,j,4)/que
+            dLy(j)=dLy(j)+dL(i,j)
+            ddy(j)=ddy(j)+dd(i,j)
+            fL=fL+dL(i,j)
             fd=fd+dd(i,j)
-            fm=fm+dl(i,j)*(qf(i,j,1)-0)
+            fm=fm+dL(i,j)*(qf(i,j,1)-0)
+
+            write(12,107) i,j,gammaij
+            write(13,109) i,j,dp(i,j)
         end do
+        write(14,111) j,dLy(j)*jb/b
+        write(15,113) j,ddy(j)*jb/b
     end do
-    cl=fl/(que*s)
+    do i=1,ib
+        dLx(i)=0.
+        ddx(i)=0.
+        do j=1,jb
+            dLx(i)=dLx(i)+dL(i,j)
+            ddx(i)=ddx(i)+dd(i,j)
+        end do
+        write(16,115) i,dLx(i)*ib/c
+        write(17,117) i,ddx(i)*ib/c
+    end do
+    cL=fL/(que*s)
     cd=fd/(que*s)
     cm=fm/(que*s*c)
 
 ! Write statements
     write(10,101)
-    write(10,102) alpha1,b,c,s,ar,vt,ib,jb,ch
-    write(10,103) cl, fl, cm, cd
+    write(10,102) 2.*b,croot,ctip,ib*jb,2*s,ar,aLpha1,xLambda1,phi1,vt,ro,ch
+    write(10,103) cL, 2*fL, cm, cd
+    write(*,103) cL, 2*fL, cm, cd
  
 ! Formats
-101 format(10x,'wing lift distribution calculation(with groun &
-effect)',10x,54('-'))
-102 format(10x,'alfa =',f10.2,8x,'b =', f10.2,8x,'c =',f13.2,&
-10x,'s =',f10.2,8x,'ar = ',f10.2,8x,'v(inf) = ',f10.2,&
-10x,'ib =',i10,8x,'jb =',i10,8x,'ch =',f16.2,/)
-103 format(10x,'cl=',f10.4,2x,'fl=',f10.4,4x,'cm=',f10.4,3x,&
-'cd=',f10.4)
+101 format('Summary',/,7('-'),/)
+102 format('Wing Span =',11x,f8.2,/,'Root Chord Length =',3x,f8.2,/,'Tip Chord Length =',4x,f8.2,&
+/,'Total Number of',/, 'Panels (On Semi Span) =',i7,/,'Wing Area = ',10x,f8.2,/, &
+'Aspect Ratio =',8x,f8.2,/,'Angle of Attack =',5x,f8.2,&
+/,'Sweep Angle =',9x,f8.2,/,'Dihedral Angle =',6x,f8.2,/,'Free Stream Velocity =',f8.2, &
+/,'Density of Medium =',3x,f8.2,/,'Height Above ground =',f9.2,/)
+103 format('CL = ',f10.5,/,'FL = ',f10.2,/,'CM = ',f10.5,/,'CD = ',f10.5)
+! 104,105 in grid
+106 format(4x,'i',4x,'j',4x,'Gamma(i,j)')
+107 format(2(i5),2x,f10.5)
+108 format(4x,'i',4x,'j',4x,'CdP(i,j) : Pressure difference coefficient of panel')
+109 format(2(i5),2x,f10.5)
+110 format(4x,'j',4x,'dLy(j)*jb/b : Lift per span length')
+111 format(i5,2x,f10.5)
+112 format(4x,'j',4x,'ddy(j)*jb/b : Drag per span length')
+113 format(i5,2x,f10.5)
+114 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
+115 format(i5,2x,f10.5)
+116 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
+117 format(i5,2x,f10.5)
 
 ! Close opened files
     close(10)
     close(11)
+    close(12)
+    close(13)
+    close(14)
+    close(15)
+    close(16)
+    close(17)
 
 end program main
 
@@ -213,15 +266,15 @@ subroutine grid
 ! qf(i,j,1-3): wing fixed vortices location
     dy=b/jb
     do j=1,jb1
-        yle=dy*(j-1)
-        xle=0+((croot-ctip)/2)*yle/b
-        xte=croot+((ctip-croot)/2)*yle/b
-        dx=(xte-xle)/ib
+        yLe=dy*(j-1)
+        xLe=0+yLe*tan(xLambda)
+        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+        dx=(xte-xLe)/ib
 
         do i=1,ib1
-            qf(i,j,1)= (xle+dx*(i-0.75))*cos(alpha)
-            qf(i,j,2)= yle*cos(phi)
-            qf(i,j,3)= -qf(i,j,1)*tan(alpha)+qf(i,j,2)*tan(phi)+ch
+            qf(i,j,1)=(xLe+dx*(i-0.75))*cos(aLpha)
+            qf(i,j,2)=yLe*cos(phi)
+            qf(i,j,3)=-qf(i,j,1)*tan(aLpha)+qf(i,j,2)*tan(phi)+ch
         end do
         qf(ib2,j,1)=xte+dxw
         qf(ib2,j,2)=qf(ib1,j,2)
@@ -230,22 +283,22 @@ subroutine grid
 
 ! Generating coordinate points for mesh plotting
     do j=1,jb1
-        yle=dy*(j-1)
-        xle=0+((croot-ctip)/2)*yle/b
-        xte=croot+((ctip-croot)/2)*yle/b
-        dx=(xte-xle)/ib
+        yLe=dy*(j-1)
+        xLe=0+yLe*tan(xLambda)
+        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+        dx=(xte-xLe)/ib
         if(mod(j,2).ne.0)then
             do i=1,ib1
-                xme = (xle+dx*(i-1))*cos(alpha)
-                yme = yle*cos(phi)
-                zme = -xme*tan(alpha)+yme*tan(phi)
+                xme=(xLe+dx*(i-1))*cos(aLpha)
+                yme=yLe*cos(phi)
+                zme=-xme*tan(aLpha)+yme*tan(phi)
                 write(11,105) xme, yme, zme
             end do
         else
             do i=ib1,1,-1
-                xme = (xle+dx*(i-1))*cos(alpha)
-                yme = yle*cos(phi)
-                zme = -xme*tan(alpha)+yme*tan(phi)
+                xme=(xLe+dx*(i-1))*cos(aLpha)
+                yme=yLe*cos(phi)
+                zme=-xme*tan(aLpha)+yme*tan(phi)
                 write(11,105) xme, yme, zme
             end do
         end if
@@ -254,48 +307,48 @@ subroutine grid
         if(mod(jb,2).ne.0)then
             if(mod(i,2).ne.0)then
                 do j=1,jb1
-                    yle=dy*(j-1)
-                    xle=0+((croot-ctip)/2)*yle/b
-                    xte=croot+((ctip-croot)/2)*yle/b
-                    dx=(xte-xle)/ib
-                    xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle*cos(phi)
-                    zme = -xme*tan(alpha)+yme*tan(phi)
+                    yLe=dy*(j-1)
+                    xLe=0+yLe*tan(xLambda)
+                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+                    dx=(xte-xLe)/ib
+                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    yme=yLe*cos(phi)
+                    zme=-xme*tan(aLpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
                 do j=jb1,1,-1
-                    yle=dy*(j-1)
-                    xle=0+((croot-ctip)/2)*yle/b
-                    xte=croot+((ctip-croot)/2)*yle/b
-                    dx=(xte-xle)/ib
-                    xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle*cos(phi)
-                    zme = -xme*tan(alpha)+yme*tan(phi)
+                    yLe=dy*(j-1)
+                    xLe=0+yLe*tan(xLambda)
+                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+                    dx=(xte-xLe)/ib
+                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    yme=yLe*cos(phi)
+                    zme=-xme*tan(aLpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
         else
             if(mod(i,2).eq.0)then
                 do j=1,jb1
-                    yle=dy*(j-1)
-                    xle=0+((croot-ctip)/2)*yle/b
-                    xte=croot+((ctip-croot)/2)*yle/b
-                    dx=(xte-xle)/ib
-                    xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle*cos(phi)
-                    zme = -xme*tan(alpha)+yme*tan(phi)
+                    yLe=dy*(j-1)
+                    xLe=0+yLe*tan(xLambda)
+                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+                    dx=(xte-xLe)/ib
+                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    yme=yLe*cos(phi)
+                    zme=-xme*tan(aLpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
                 do j=jb1,1,-1
-                    yle=dy*(j-1)
-                    xle=0+((croot-ctip)/2)*yle/b
-                    xte=croot+((ctip-croot)/2)*yle/b
-                    dx=(xte-xle)/ib
-                    xme = (xle+dx*(i-1))*cos(alpha)
-                    yme = yle*cos(phi)
-                    zme = -xme*tan(alpha)+yme*tan(phi)
+                    yLe=dy*(j-1)
+                    xLe=0+yLe*tan(xLambda)
+                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+                    dx=(xte-xLe)/ib
+                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    yme=yLe*cos(phi)
+                    zme=-xme*tan(aLpha)+yme*tan(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
@@ -380,7 +433,7 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gamma,u,v,w)
 
     r1=sqrt((x-x1)*(x-x1)+(y-y1)*(y-y1)+(z-z1)*(z-z1))
     r2=sqrt((x-x2)*(x-x2)+(y-y2)*(y-y2)+(z-z2)*(z-z2))
-    if(r1.lt.rcut .or. r2.lt.rcut .or. square.lt.rcut) goto 1
+    if(r1.Lt.rcut .or. r2.Lt.rcut .or. square.Lt.rcut) goto 1
     r0r1=(x2-x1)*(x-x1)+(y2-y1)*(y-y1)+(z2-z1)*(z-z1)
     r0r2=(x2-x1)*(x-x2)+(y2-y1)*(y-y2)+(z2-z1)*(z-z2)
     coef=gamma/(4.0*pi*square)*(r0r1/r1-r0r2/r2)
@@ -408,7 +461,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
             i3=i
             if(i.eq.ib1) i3=ib
             vortic=gamma(i3,j)
-            if(onoff.lt.0.1) goto 2
+            if(onoff.Lt.0.1) goto 2
             call vortex(x,y,z,qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i,j+1,1),    &
             qf(i,j+1,2),qf(i,j+1,3),vortic,u1,v1,w1)
             call vortex(x,y,z,qf(i+1,j+1,1),qf(i+1,j+1,2),qf(i+1,j+1,3),qf(i+1,j,1),&
