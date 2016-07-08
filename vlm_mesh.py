@@ -4,12 +4,15 @@ from mpl_toolkits.mplot3d import Axes3D
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-f = open('mesh.txt', 'r')
+f = open('outputdata/mesh.txt', 'r')
 
 x_list = []
 y_list = []
 z_list = []
+y_list_neg = []
+
 first_line = f.readline()
+
 for l in f:
     lstr = l.split()
     x = float(lstr[0])
@@ -19,7 +22,12 @@ for l in f:
     y_list.append(y)
     z_list.append(z)
 
-ax.plot_wireframe(x_list, y_list, z_list,color='black')
+for i in y_list:
+    i=-i
+    y_list_neg.append(i)
+
+ax.plot_wireframe(x_list, y_list, z_list,color='purple')
+ax.plot_wireframe(x_list, y_list_neg, z_list, color='purple')
 # rstride : array row stride (step size), defaults to 1
 # cstride : array column stride (step size), defaults to 1
 

@@ -1,0 +1,11 @@
+ Subroutine grid starts...
+ Mesh generated.
+ Collocation points generated.
+ End of subroutine grid.
+ Induced coefficients calculated.
+ Subroutine decomp starts...
+ Subroutine decomp ended.
+ Subroutine solver starts...
+ Subroutine solver ended.
+ Forces calculated.
+ Coefficients calculated.

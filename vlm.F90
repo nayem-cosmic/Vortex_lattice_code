@@ -1,7 +1,7 @@
 ! 3d-vlm code for simple wing planforms with ground effect(by joe katz,1974).
 
 module com
-    real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),x(4)
+    real :: qf(6,14,3),qc(4,13,3),ds(4,13,4),a1(5,13),xx(4)
     real :: b,c,s,ar,ch,dxw,alpha,phi,zm,p
     integer :: ib,jb,isign
 end module com
@@ -14,12 +14,12 @@ program vlm
 
     ib=4
     jb=13
-    x(1)=0.
-    x(2)=0.
-    x(3)=1.
-    x(4)=1.
-    b=3
-    zm=.02
+    xx(1)=0.
+    xx(2)=0.
+    xx(3)=4.
+    xx(4)=4.
+    b=13
+    zm=0
 ! zm is maximum camber for NACA profil.
     p=0.4
 ! p is the location of maximum camber.
@@ -29,7 +29,7 @@ program vlm
     phi=0;
     phi=phi*pi/180.
     ch=1000.
-! x(1) to x(4) are x-coordinates of the wing's four cornerpoints.
+! xx(1) to xx(4) are x-coordinates of the wing's four cornerpoints.
 ! b - wing span, vt - free stream speed, b - wing span,
 ! ch - height above ground
 
@@ -41,7 +41,7 @@ program vlm
             gamma(i,j)=1.0
         end do
     end do
-    ro=1000.
+    ro=1.
     ib1=ib+1
     ib2=ib+2
     jb1=jb+1
@@ -49,7 +49,7 @@ program vlm
 ! wing geometry
     call grid
     write(6,101)
-    write(6,102) alpha*180/pi,b,c,s,ar,vt,ib,jb,ch
+    write(6,102) alpha*180/pi,phi*180/pi,b,c,s,ar,vt,ib,jb,ch
 
 ! aerodynamic calculations
 ! influence coefficients calculation
@@ -143,7 +143,6 @@ program vlm
             dL(i,j)=ro*vt*gammaij*dym
 
 ! induced drag calculation
-            isign=4
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
             if(ch.gt.100.0) goto 194
@@ -153,7 +152,6 @@ program vlm
 194         w3=0.
             w4=0.
 195         wind=w1+w2-w3-w4
-            isign=0
 ! add influence of mirror image (ground).
 
             dd(i,j)=-ro*dym*gammaij*wind
@@ -161,7 +159,7 @@ program vlm
             dLy(j)=dLy(j)+dL(i,j)
             fL=fL+dL(i,j)
             fd=fd+dd(i,j)
-            fm=fm+dL(i,j)*(qf(i,j,1)-x(1))
+            fm=fm+dL(i,j)*(qf(i,j,1)-xx(1))
         end do
     end do
 
@@ -184,7 +182,7 @@ program vlm
 
 ! formats
 101 format(20x,'Wing lift distribution calculation (with ground effect)',/,20x,56('-'))
-102 format(10x,'Alpha:',f10.2,8x,'B: ',f10.2,8x,'C: ',f13.2,/,10x,'S: ', &
+102 format(10x,'Alpha:',f10.2,8x,'Phi:',f10.2,8x,'B: ',f10.2,8x,'C: ',f13.2,/,10x,'S: ', &
 & f10.2,8x,'AR: ',f10.2,8x,'V(inf): ',f10.2,/,10x,'IB: ',i10,8x,'JB: ',i10,8x,'L.E. Height: ', f8.2,/)
 103 format(i3,3x,f10.3,4(f12.3),3x,4(f12.3))
 104 format(10X,'CL= ',f10.4,2x,'L= ',f10.4,4x,'CM= ',f10.7,3x,'CD= ',f10.4,/)
@@ -196,9 +194,9 @@ program vlm
 end program vlm
 
 subroutine grid
-    use com,only : qf,qc,ds,x,b,c,s,ar,alpha,phi,ib,jb,ch,isign,dxw,zm,p
+    use com,only : qf,qc,ds,xx,b,c,s,ar,alpha,phi,ib,jb,ch,isign,dxw,zm,p
     pi=4.*atan(1.)
-! x(1) - is root l.e., x(2) tip l.e., x(3) tip t.e., and x(4) is root t.e.
+! xx(1) - is root l.e., xx(2) tip l.e., xx(3) tip t.e., and xx(4) is root t.e.
 ! ib: no. of chordwise boxes, jb: no. of spanwise boxes
     ib1=ib+1
     ib2=ib+2
@@ -208,12 +206,12 @@ subroutine grid
     dy=b/jb
     do j=1,jb1
         yLe=dy*(j-1)
-        xLe=x(1)+(x(2)-x(1))*yLe/b
-        xte=x(4)+(x(3)-x(4))*yLe/b
+        xLe=xx(1)+(xx(2)-xx(1))*yLe/b
+        xte=xx(4)+(xx(3)-xx(4))*yLe/b
 ! xle and xte are l.e. and t.e. x-coordinates
         ci=xte-xLe
 ! ci instantenious chord length.
-        dx=(xte-xLe)/ib
+        dx=ci/ib
         do i=1,ib1
             qf(i,j,1)=(xLe+dx*(i-0.75))*cos(alpha)
             qf(i,j,2)=yLe*cos(phi)
@@ -223,7 +221,7 @@ subroutine grid
             else
                 yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
             end if
-            qf(i,j,3)=yc-qf(i,j,1)*tan(alpha)+qf(i,j,2)*tan(phi)+ch
+            qf(i,j,3)=yc*cos(alpha)-qf(i,j,1)*tan(alpha)+qf(i,j,2)*tan(phi)+ch
         end do
 
 ! wake far field points
@@ -247,7 +245,7 @@ subroutine grid
     end do
 
 ! b -is semi span, c -av. chord, s - area
-    s=0.5*(x(3)-x(2)+x(4)-x(1))*b
+    s=0.5*(xx(3)-xx(2)+xx(4)-xx(1))*b
     c=s/b
     ar=2.*b*b/s
     return
@@ -355,38 +353,13 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
             v0=v2+v4+(v1+v3)*onoff
             w0=w2+w4+(w1+w3)*onoff
 
-! influence coefficient at (x,y,z) for (i,j) panel
-! when i .eq. ib1 a1(ib1,j)=a1(ib,j)+a1(ib1,j)
-            if(isign.eq.0) then
-                if(i.lt.ib1) then
-                    a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
-                else if(i.eq.ib1) then
-                    a1(ib1,j)=u0*ds(ib,j,1)+v0*ds(ib,j,2)+w0*ds(ib,j,3)+u0*ds(ib1,j,1)+v0*ds(ib1,j,2)+w0*ds(ib1,j,3)
-                end if
+! Magnitude of the influence co-efficient
+            if(isign.eq.0)A1(I,J)=U0*DS(I1,J1,1)+V0*DS(I1,J1,2)+W0*DS(I1,J1,3)
+            IF(ISIGN.EQ.1) A1(I,J)=U0*DS(I1,J1,1)-V0*DS(I1,J1,2)+W0*DS(I1,J1,3)
+            IF(ISIGN.EQ.2) A1(I,J)=U0*DS(I1,J1,1)+V0*DS(I1,J1,2)-W0*DS(I1,J1,3)
+            IF(ISIGN.EQ.3) A1(I,J)=U0*DS(I1,J1,1)-V0*DS(I1,J1,2)-W0*DS(I1,J1,3)
 
-            else if(isign.eq.1) then
-                if(i.lt.ib1) then
-                    a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
-                else if(i.eq.ib1) then
-                    a1(ib1,j)=u0*ds(ib,j,1)-v0*ds(ib,j,2)+w0*ds(ib,j,3)+u0*ds(ib1,j,1)-v0*ds(ib1,j,2)+w0*ds(ib1,j,3)
-                end if
-
-            else if(isign.eq.2) then
-                if(i.lt.ib1) then
-                    a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
-                else if(i.eq.ib1) then
-                    a1(ib1,j)=u0*ds(ib,j,1)+v0*ds(ib,j,2)-w0*ds(ib,j,3)+u0*ds(ib1,j,1)+v0*ds(ib1,j,2)-w0*ds(ib1,j,3)
-                end if
-
-            else if(isign.eq.3) then
-                if(i.lt.ib1) then
-                    a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
-                else if(i.eq.ib1) then
-                    a1(ib1,j)=u0*ds(ib,j,1)-v0*ds(ib,j,2)-w0*ds(ib,j,3)+u0*ds(ib1,j,1)-v0*ds(ib1,j,2)-w0*ds(ib1,j,3)
-                end if
-            else if(isign.eq.4) then
-! Do nothing. While caculating drag influence coefficient is not needed.
-            end if
+            IF(I.EQ.IB1) A1(IB,J)=A1(IB,J)+A1(IB1,J)
 
             u=u+u0
             v=v+v0

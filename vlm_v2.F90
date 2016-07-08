@@ -8,6 +8,7 @@
 ! phi : dihedral angle, xLambda : sweep angle
 ! croot : chord length at wing root, ctip : chord length at wing tip
 ! qf : vortex ring corner points, qc : collocation points, ds : area vector
+! qh : center points of panels, it is needed for pressure coefficient graphing
 ! a1 : auxiliary influence coefficient which is needed for calculation
 ! gamma : circulation, dL : partial lift force, dd : partial drag force
 ! dp : pressure difference, a : influence coefficient
@@ -19,7 +20,7 @@ module com
     integer :: ib,jb,ib1,ib2,jb1,isign
     real :: b,c,s,ar,ch,dxw,aLpha,phi,xLambda,croot,ctip
 
-    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax)
+    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
 
 program main
@@ -29,22 +30,15 @@ program main
 gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     integer :: ip(max)
 
-    open(10, file='summary.txt')
-    open(11, file='mesh.txt')
-    open(12, file='gamma.txt')
-    open(13, file='dp_coeff.txt')
-    open(14, file='d_lift_span.txt')
-    open(15, file='d_drag_span.txt')
-    open(16, file='d_lift_chord.txt')
-    open(17, file='d_drag_chord.txt')
-
-! Write heading of files
-    write(12,106)
-    write(13,108)
-    write(14,110)
-    write(15,112)
-    write(16,114)
-    write(17,116)
+    open(10, file='outputdata/summary.txt')
+    open(11, file='outputdata/mesh.txt')
+    open(12, file='outputdata/gamma.txt')
+    open(13, file='outputdata/dp_coeff.txt')
+    open(14, file='outputdata/d_lift_span.txt')
+    open(15, file='outputdata/d_drag_span.txt')
+    open(16, file='outputdata/d_lift_chord.txt')
+    open(17, file='outputdata/d_drag_chord.txt')
+    open(18, file='outputdata/log.txt')
 
     ib=5
     jb=15
@@ -61,17 +55,27 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     phi=phi1*pi/180.0
     xLambda1=53.54
     xLambda=xLambda1*pi/180
-
 ! If ch<=100, ground effect is counted
     ch=1000. 
 ! constants
     dxw=100.0*b
     ro=1.0
 
+! Write heading of files
+    write(12,106)
+    write(13,108) alpha1,xlambda1,phi1
+    write(13,109)
+    write(14,111) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
+    write(14,112)
+    write(15,114) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
+    write(15,115)
+    write(16,117) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
+    write(16,118)
+    write(17,120) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
+    write(17,121)
+
 ! wing geometry
     call grid
-! call hgrid
-
 
 ! aerodynamic calculations
     do i=1,ib
@@ -81,6 +85,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
         end do
     end do
 
+    write(*,*) "Induced coefficients calculation starts..."
 ! influence coefficients calculation
     k=0
     do i=1,ib
@@ -141,6 +146,8 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             dw(k)=-(uinf*ds(i,j,1)+vinf*ds(i,j,2)+winf*ds(i,j,3))
         end do
     end do
+    write(*,*) "Induced coefficients calculated."
+    write(18,*) "Induced coefficients calculated."
 
 ! Solution of the problem: dw(i) = a(i,j)*gamma(i)
     k1=ib*jb
@@ -198,11 +205,13 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             fm=fm+dL(i,j)*(qf(i,j,1)-0)
 
             write(12,107) i,j,gammaij
-            write(13,109) i,j,dp(i,j)
+            write(13,110) qh(i,j,1),qh(i,j,2),dp(i,j)
         end do
-        write(14,111) j,dLy(j)*jb/b
-        write(15,113) j,ddy(j)*jb/b
+        write(14,113) j,dLy(j)*jb/b
+        write(15,116) j,ddy(j)*jb/b
     end do
+    write(*,*) "Forces calculated."
+    write(18,*) "Forces calculated."
     do i=1,ib
         dLx(i)=0.
         ddx(i)=0.
@@ -210,12 +219,14 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             dLx(i)=dLx(i)+dL(i,j)
             ddx(i)=ddx(i)+dd(i,j)
         end do
-        write(16,115) i,dLx(i)*ib/c
-        write(17,117) i,ddx(i)*ib/c
+        write(16,119) i,dLx(i)*ib/c
+        write(17,122) i,ddx(i)*ib/c
     end do
     cL=fL/(que*s)
     cd=fd/(que*s)
     cm=fm/(que*s*c)
+    write(*,*) "Coefficients calculated."
+    write(18,*) "Coefficients calculated."
 
 ! Write statements
     write(10,101)
@@ -234,16 +245,21 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 ! 104,105 in grid
 106 format(4x,'i',4x,'j',4x,'Gamma(i,j)')
 107 format(2(i5),2x,f10.5)
-108 format(4x,'i',4x,'j',4x,'CdP(i,j) : Pressure difference coefficient of panel')
-109 format(2(i5),2x,f10.5)
-110 format(4x,'j',4x,'dLy(j)*jb/b : Lift per span length')
-111 format(i5,2x,f10.5)
-112 format(4x,'j',4x,'ddy(j)*jb/b : Drag per span length')
+108 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1)
+109 format(4x,'qh(i,j,1)',1x,'qh(i,j,2)',1x,'CdP(i,j) : Pressure difference coefficient of panel')
+110 format(2(f10.3),2x,f10.5)
+111 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
+112 format(4x,'j',4x,'dLy(j)*jb/b : Lift per span length')
 113 format(i5,2x,f10.5)
-114 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
-115 format(i5,2x,f10.5)
-116 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
-117 format(i5,2x,f10.5)
+114 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
+115 format(4x,'j',4x,'ddy(j)*jb/b : Drag per span length')
+116 format(i5,2x,f10.5)
+117 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
+118 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
+119 format(i5,2x,f10.5)
+120 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
+121 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
+122 format(i5,2x,f10.5)
 
 ! Close opened files
     close(10)
@@ -254,11 +270,18 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     close(15)
     close(16)
     close(17)
+    close(18)
+    write(*,*) "All opend files closed."
+    write(18,*) "All opened files closed."
+    write(*,*) "End of program."
+    write(18,*) "End of program."
 
 end program main
 
 subroutine grid
     use com
+    write(*,*) "Subroutine grid starts..."
+    write(18,*) "Subroutine grid starts..."
     write(11,104)
 104 format(5x,'xMesh',5x,'yMesh',5x,'zMesh')
 105 format(3(f10.3))
@@ -354,6 +377,21 @@ subroutine grid
             end if
         end if 
     end do
+    
+    write(*,*) "Mesh generated."
+    write(18,*) "Mesh generated."
+! Generating center points of panels for contour graphing of pressure coefficients
+    do j=1,jb
+        yLe=dy*(j-0.5)
+        xLe=0+yLe*tan(xLambda)
+        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
+        dx=(xte-xLe)/ib
+
+        do i=1,ib1
+            qh(i,j,1)=xLe+dx*(i-0.5)
+            qh(i,j,2)=yLe
+        end do
+    end do
 
 ! Generating wing collocation points and panel area vectors
     do j=1,jb
@@ -362,16 +400,19 @@ subroutine grid
             qc(i,j,2)=(qf(i,j,2)+qf(i,j+1,2)+qf(i+1,j+1,2)+qf(i+1,j,2))/4
             qc(i,j,3)=(qf(i,j,3)+qf(i,j+1,3)+qf(i+1,j+1,3)+qf(i+1,j,3))/4
 
-
             call panel(qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i+1,j,1),qf(i+1,j,2), &
 qf(i+1,j,3),qf(i,j+1,1),qf(i,j+1,2),qf(i,j+1,3),qf(i+1,j+1,1), &
 qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
         end do
     end do
+    write(*,*) "Collocation points generated."
+    write(18,*) "Collocation points generated."
 
     s=0.5*(croot+ctip)*b
     c=s/b
     ar=2.0*b*b/s
+    write(*,*) "End of subroutine grid."
+    write(18,*) "End of subroutine grid."
 
     return
 end subroutine grid
@@ -445,7 +486,6 @@ subroutine vortex(x,y,z,x1,y1,z1,x2,y2,z2,gamma,u,v,w)
     v=0.0
     w=0.0
 2   continue
-
     return
 end subroutine vortex
 
@@ -500,7 +540,9 @@ end subroutine wing
 subroutine decomp(n,ndim,a,ip)
     real :: a(ndim,ndim),t
     integer :: ip(ndim)
-
+    write(*,*) "Subroutine decomp starts..."
+    write(18,*) "Subroutine decomp starts..."
+ 
     ip(n)=1
     do k=1,n
         if(k.eq.n) goto 5
@@ -529,6 +571,8 @@ subroutine decomp(n,ndim,a,ip)
 4       end do
 5       if(a(k,k).eq.0.e0) ip(n)=0
     end do
+    write(*,*) "Subroutine decomp ended."
+    write(18,*) "Subroutine decomp ended."
 
     return
 end subroutine  decomp
@@ -536,7 +580,9 @@ end subroutine  decomp
 subroutine solver(n,ndim,a,b,ip)
     real :: a(ndim,ndim),b(ndim),t
     integer :: ip(ndim)
-
+    write(*,*) "Subroutine solver starts..."
+    write(18,*) "Subroutine solver starts..."
+ 
     if(n.eq.1) goto 9
     nm1=n-1
     do k=1,nm1
@@ -559,6 +605,8 @@ subroutine solver(n,ndim,a,b,ip)
         end do
     end do
 9   b(1)=b(1)/a(1,1)
+    write(*,*) "Subroutine solver ended."
+    write(18,*) "Subroutine solver ended."
 
     return
 end subroutine solver

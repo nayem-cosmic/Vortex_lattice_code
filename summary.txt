@@ -1,4 +1,0 @@
-          wing lift distribution calculation(with groun effect)          ------------------------------------------------------
-          alfa =      5.00        b =     13.00        c =         2.00          s =     26.00        ar =      13.00        v(inf) =       5.00          ib =         7        jb =        23        ch =         1000.00
-
-          cl=    0.4449  fl=  144.6038    cm=    0.2953   cd=    0.0052
