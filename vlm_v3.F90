@@ -18,13 +18,14 @@ module com
     integer, parameter :: imax=20, jmax=50, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,vt,ch,ro,dxw,aLpha,phi,xLambda,croot,ctip,zm,p
+    real :: b,c,s,ar,vt,ch,rho,dxw,aLpha,phi,xLambda,croot,ctip,zm,p
 
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
 
 program main
     use com
+    character :: ans
     integer :: inaca
     integer :: idig(4)
 
@@ -39,52 +40,78 @@ program main
     open(16, file='outputdata/d_lift_chord.txt')
     open(17, file='outputdata/d_drag_chord.txt')
     open(18, file='outputdata/log.txt')
+    open(19, file='inputdata/prev.txt')
     write(*,*) "Output data files opened."
     write(18,*) "Output data files opened."
 
-    write(*,*) "Enter 4-digit NACA foil number (or enter zero for flat plane):"
-    write(*,*) "N.B.Last two digit will be ignored in this program because vlm doesn't count thickness."
-1   read(*,*) inaca
-    if(inaca.eq.0) then
-! zm : maximum camber for NACA profile, p : location of maximum camber 
+    write(*,*) "What do you want to continue with?"
+    write(*,*) "    (p) Previous data"
+    write(*,*) "    (m) Manually assigned data in code"
+    write(*,*) "    (c) Command line input(stdin)"
+    read(*,*) ans
+    if(ans.eq.'p') then
+        read(19,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    else if(ans.eq.'m') then
+! Manual input
+        ib=5
+        jb=15
+        b=1.415
+        croot=1.5
+        ctip=.5
+        alpha1=5.354
+        xlambda1=53.54
+        phi1=0.
+        ch=1000.
+        rho=1.
+        vt=5.
         zm=0.
-        p=0.5
-    else if(inaca.ge.1000.and.inaca.le.9999.and.inaca.ne.0) then
-        do k=1,4
-           idig(k)=mod(inaca,10)
-           inaca=inaca/10
-        end do
-        if(idig(3).eq.0) idig(3)=5
-        zm=idig(4)/100.
-        p=idig(3)/10.
+        p=.4
     else
-        write(*,*) "Please enter a valid 4-digit number: "
-        goto 1
+        write(*,*) "Enter 4-digit NACA foil number (or enter zero for flat plane):"
+        write(*,*) "N.B.Last two digit will be ignored in this program because vlm doesn't count thickness."
+1       read(*,*) inaca
+        if(inaca.eq.0) then
+! zm : maximum camber for NACA profile, p : location of maximum camber 
+            zm=0.
+            p=0.5
+        else if(inaca.ge.1000.and.inaca.le.9999.and.inaca.ne.0) then
+            do k=1,4
+                idig(k)=mod(inaca,10)
+                inaca=inaca/10
+            end do
+            if(idig(3).eq.0) idig(3)=5
+            zm=idig(4)/100.
+            p=idig(3)/10.
+        else
+            write(*,*) "Please enter a valid 4-digit number: "
+            goto 1
+        end if
+        write(*,*) "Enter wing's semispan:"
+        read(*,*) b
+        write(*,*) "Enter root chord and tip chord respectively:"
+        read(*,*) croot,ctip
+        write(*,*) "Enter angle of attack:"
+        write(*,*) "N.B. All angles are in degree unit."
+        read(*,*) alpha1
+        write(*,*) "Enter sweep angle:"
+        read(*,*) xlambda1
+        write(*,*) "Enter dihedral angle:"
+        read(*,*) phi1
+        write(*,*) "Now enter free stream velocity:"
+        read(*,*) vt
+        write(*,*) "Enter density of the medium:"
+        read(*,*) rho
+        write(*,*) "Height above agound? If height is greater than 100, ground effect"
+        write(*,*) "will become so triffle that program will ignore this effect."
+        read(*,*) ch
+        write(*,*) "Put spanwise panel number and chordwise panel number respectively:"
+2       read(*,*) jb,ib
+        if(jb.gt.jmax.or.ib.gt.imax)then
+            write(*,*) "Spanwise or chordwise array limit crossed! Please enter value in limit:"
+            goto 2
+        end if
     end if
-    write(*,*) "Enter wing's semispan:"
-    read(*,*) b
-    write(*,*) "Enter root chord and tip chord respectively:"
-    read(*,*) croot,ctip
-    write(*,*) "Enter angle of attack:"
-    write(*,*) "N.B. All angles are in degree unit."
-    read(*,*) alpha1
-    write(*,*) "Enter sweep angle:"
-    read(*,*) xlambda1
-    write(*,*) "Enter dihedral angle:"
-    read(*,*) phi1
-    write(*,*) "Now enter free stream velocity:"
-    read(*,*) vt
-    write(*,*) "Enter density of the medium:"
-    read(*,*) ro
-    write(*,*) "Height above agound? If height is greater than 100, ground effect"
-    write(*,*) "will become so triffle that program will ignore this effect."
-    read(*,*) ch
-    write(*,*) "Put spanwise panel number and chordwise panel number respectively:"
-2   read(*,*) jb,ib
-    if(jb.gt.jmax.or.ib.gt.imax)then
-        write(*,*) "Spanwise or chordwise array limit crossed! Please enter value in limit:"
-        goto 2
-    end if
+    write(19,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
 
     ib1=ib+1
     ib2=ib+2
@@ -126,13 +153,13 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     write(12,106)
     write(13,108) alpha1,xlambda1,phi1
     write(13,109)
-    write(14,111) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
+    write(14,111) alpha1,xlambda1,phi1,rho,vt,ch,b/jb
     write(14,112)
-    write(15,114) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
+    write(15,114) alpha1,xlambda1,phi1,rho,vt,ch,b/jb
     write(15,115)
-    write(16,117) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
+    write(16,117) alpha1,xlambda1,phi1,rho,vt,ch,(croot+ctip)/2/ib
     write(16,118)
-    write(17,120) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
+    write(17,120) alpha1,xlambda1,phi1,rho,vt,ch,(croot+ctip)/2/ib
     write(17,121)
 
 ! wing geometry
@@ -234,7 +261,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     fL=0.0
     fd=0.0
     fm=0.0
-    que=0.5*ro*vt*vt
+    que=0.5*rho*vt*vt
 
     do j=1,jb
         dLy(j)=0.
@@ -243,7 +270,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             if(i.eq.1) gammaij=gamma(i,j)
             if(i.gt.1) gammaij=gamma(i,j)-gamma(i-1,j)
             dym=qf(i,j+1,2)-qf(i,j,2)
-            dL(i,j)=ro*vt*gammaij*dym
+            dL(i,j)=rho*vt*gammaij*dym
 
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
@@ -259,7 +286,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 195         wind=w1+w2-w3-w4
 
-            dd(i,j)=-ro*gammaij*wind*dym
+            dd(i,j)=-rho*gammaij*wind*dym
             dp(i,j)=dL(i,j)/ds(i,j,4)/que
             dLy(j)=dLy(j)+dL(i,j)
             ddy(j)=ddy(j)+dd(i,j)
@@ -293,7 +320,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 ! Write statements
     write(10,101)
-    write(10,102) 2.*b,croot,ctip,ib*jb,2*s,ar,aLpha1,xLambda1,phi1,vt,ro,ch
+    write(10,102) 2.*b,croot,ctip,ib*jb,2*s,ar,aLpha1,xLambda1,phi1,vt,rho,ch
     write(10,103) cL, 2*fL, cm, cd
     write(*,103) cL, 2*fL, cm, cd
  
@@ -354,8 +381,8 @@ subroutine grid
             else
                 yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
             end if
-            qf(i,j,2)=yLe*cos(phi)-yc*tan(phi)
-            qf(i,j,3)=yc*cos(alpha)*cos(phi)-qf(i,j,1)*tan(aLpha)+qf(i,j,2)*tan(phi)+ch
+            qf(i,j,2)=yLe*cos(phi)-yc*sin(phi)
+            qf(i,j,3)=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-.75))*sin(aLpha)+yLe*sin(phi)+ch
         end do
         qf(ib2,j,1)=xte+dxw
         qf(ib2,j,2)=qf(ib1,j,2)
@@ -380,8 +407,8 @@ subroutine grid
                 else
                     yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                 end if
-                yme=yLe*cos(phi)-yc*tan(phi)
-                zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                yme=yLe*cos(phi)-yc*sin(phi)
+                zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                 write(11,105) xme, yme, zme
             end do
         else
@@ -393,8 +420,8 @@ subroutine grid
                 else
                     yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                 end if
-                yme=yLe*cos(phi)-yc*tan(phi)
-                zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                yme=yLe*cos(phi)-yc*sin(phi)
+                zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                 write(11,105) xme, yme, zme
             end do
         end if
@@ -415,8 +442,8 @@ subroutine grid
                     else
                         yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                    yme=yLe*cos(phi)-yc*sin(phi)
+                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
@@ -433,8 +460,8 @@ subroutine grid
                     else
                         yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                    yme=yLe*cos(phi)-yc*sin(phi)
+                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
@@ -453,8 +480,8 @@ subroutine grid
                     else
                         yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                    yme=yLe*cos(phi)-yc*sin(phi)
+                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                     write(11,105) xme, yme, zme
                 end do
             else
@@ -471,8 +498,8 @@ subroutine grid
                     else
                         yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
+                    yme=yLe*cos(phi)-yc*sin(phi)
+                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
                     write(11,105) xme, yme, zme
                 end do
             end if
