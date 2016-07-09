@@ -1,7 +1,7 @@
 #!/bin/sh
 echo compiling...
 
-gfortran vlm_v2.F90
+gfortran vlm_v3.F90
 ./a.out
 
 python2 vlm_mesh.py &

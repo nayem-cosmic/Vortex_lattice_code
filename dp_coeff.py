@@ -6,7 +6,7 @@ import numpy as np
 fig = plt.figure()
 ax = fig.add_subplot(121)
 
-f = open('dp_coeff.txt', 'r')
+f = open('outputdata/dp_coeff.txt', 'r')
 
 x_list = []
 y_list = []

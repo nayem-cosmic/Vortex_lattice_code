@@ -215,7 +215,7 @@ subroutine grid
         do i=1,ib1
             qf(i,j,1)=(xLe+dx*(i-0.75))*cos(alpha)
             qf(i,j,2)=yLe*cos(phi)
-            xc=dx*(i-1)
+            xc=dx*(i-0.75)
             if(xc.le.p*ci) then
                 yc=zm*xc*(2*p-xc/ci)/p**2
             else

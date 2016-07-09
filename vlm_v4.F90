@@ -18,64 +18,259 @@ module com
     integer, parameter :: imax=20, jmax=50, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,ch,dxw,aLpha,phi,xLambda,croot,ctip,zm,p
-
+    real :: b,c,s,ar,vt,ch,rho,dxw,aLpha,phi,xLambda,croot,ctip,zm,p,cL,cd,cm
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
 
 program main
     use com
 
-    real :: gamma(imax,jmax),dL(imax,jmax),dd(imax,jmax),dp(imax,jmax),a(max,max), &
-gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
-    integer :: ip(max)
+    write(*,*) "Program starts..."
+    write(21,*) "Program starts..."
+    open(10, file='outputdata/alphacl.txt')
+    open(11, file='outputdata/lambdacl.txt')
+    open(12, file='outputdata/phicl.txt')
+    open(13, file='outputdata/alphacm.txt')
+    open(14, file='outputdata/lambdacm.txt')
+    open(15, file='outputdata/phicm.txt')
+    open(16, file='outputdata/alphacd.txt')
+    open(17, file='outputdata/lambdacd.txt')
+    open(18, file='outputdata/phicd.txt')
+    open(19, file='outputdata/chcl.txt')
+    open(20, file='outputdata/chcd.txt')
+    open(21, file='outputdata/log.txt')
+    open(22, file='inputdata/prev.txt')
+    write(*,*) "Data files opened."
+    write(21,*) "Data files opened."
 
-    open(10, file='outputdata/summary.txt')
-    open(11, file='outputdata/mesh.txt')
-    open(12, file='outputdata/gamma.txt')
-    open(13, file='outputdata/dp_coeff.txt')
-    open(14, file='outputdata/d_lift_span.txt')
-    open(15, file='outputdata/d_drag_span.txt')
-    open(16, file='outputdata/d_lift_chord.txt')
-    open(17, file='outputdata/d_drag_chord.txt')
-    open(18, file='outputdata/log.txt')
-
-    ib=5
-    jb=15
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
     ib1=ib+1
     ib2=ib+2
     jb1=jb+1
-    croot=1.5
-    ctip=.5
-    b=1.415
-    vt=5.0
-    aLpha1=5.354
-    aLpha=aLpha1*pi/180.0
-    phi1=0.
-    phi=phi1*pi/180.0
-    xLambda1=53.54
-    xLambda=xLambda1*pi/180
-! If ch<=100, ground effect is counted
-    ch=1000.
-! zm : maximum camber for NACA profile, p : location of maximum camber 
-    zm=0.0
-    p=0.4
+    c=(croot+ctip)/2
 ! constants
     dxw=100.0*b
-    ro=1.0
+    write(10,100) b,c,xLambda1,phi1,ch
+100 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi',f5.1,' H.G.:',f7.1)
+    write(10,*) "Alpha vs. CL"
+    alpha=0
+    do ic=0,50
+        alpha=alpha+0.02
+        call vlm
+        write(10,*) alpha*180/pi,cL
+    end do
+    write(21,*) "Alpha vs. CL calculated."
+    write(*,*) "Alpha vs. CL calculated."
+    close(22)
 
-! Write heading of files
-    write(12,106)
-    write(13,108) alpha1,xlambda1,phi1
-    write(13,109)
-    write(14,111) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
-    write(14,112)
-    write(15,114) alpha1,xlambda1,phi1,ro,vt,ch,b/jb
-    write(15,115)
-    write(16,117) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
-    write(16,118)
-    write(17,120) alpha1,xlambda1,phi1,ro,vt,ch,(croot+ctip)/2/ib
-    write(17,121)
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    phi=phi1*pi/180.0
+    write(11,101) b,c,alpha1,phi1,ch
+101 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(11,*) "Lambda vs. CL"
+    xLambda=-1
+    do ic=1,100
+        xLambda=xLambda+0.02
+        call vlm
+        write(11,*) xlambda*180/pi,cL
+    end do
+    write(21,*) "Lambda vs. CL calculated."
+    write(*,*) "Lambda vs. CL calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    phi=phi1*pi/180.
+    write(12,102) b,c,xLambda1,alpha1,ch
+102 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Alpha:',f5.1,' H.G.:',f7.1)
+    write(12,*) "Phi vs. CL"
+    phi=0
+    do ic=0,50
+        phi=phi+0.02
+        call vlm
+        write(12,*) phi*180/pi,cL
+    end do
+    write(21,*) "Phi vs. CL calculated."
+    write(*,*) "Phi vs. CL calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(13,103) b,c,xLambda1,phi1,ch
+103 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(13,*) "Alpha vs. CM"
+    aLpha=0
+    do ic=0,50
+        aLpha=alpha+0.02
+        call vlm
+        write(13,*) alpha*180/pi,cm
+    end do
+    write(21,*) "Alpha vs. CM calculated."
+    write(*,*) "Alpha vs. CM calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(14,104) b,c,aLpha1,phi1,ch
+104 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(14,*) "Lambda vs. CM"
+    xLambda=-1
+    do ic=1,100
+        xLambda=xLambda+0.02
+        call vlm
+        write(14,*) xlambda*180/pi,cm
+    end do
+    write(21,*) "Lambda vs. CM calculated."
+    write(*,*) "Lambda vs. CM calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(15,105) b,c,aLpha1,phi1,ch
+105 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(15,*) "Phi vs. CM"
+    phi=0
+    do ic=0,50
+        phi=phi+0.02
+        call vlm
+        write(15,*) phi*180/pi,cm
+    end do
+    write(21,*) "Phi vs. CM calculated."
+    write(*,*) "Phi vs. CM calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(16,106) b,c,xLambda1,phi1,ch
+106 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(16,*) "Alpha vs. CD"
+    aLpha=0
+    do ic=0,50
+        aLpha=aLpha+0.02
+        call vlm
+        write(16,*) alpha*180/pi,cd
+    end do
+    write(21,*) "Alpha vs. CD calculated."
+    write(*,*) "Alpha vs. CD calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(17,107) b,c,aLpha1,phi1,ch
+107 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
+    write(17,*) "Lambda vs. CD"
+    xLambda=-1
+    do ic=1,100
+        xLambda=xLambda+0.02
+        call vlm
+        write(17,*) xlambda*180/pi,cd
+    end do
+    write(21,*) "Lambda vs. CD calculated."
+    write(*,*) "Lambda vs. CD calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(18,108) b,c,xLambda1,aLpha1,ch
+108 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Alpha:',f5.1,' H.G.:',f7.1)
+    write(18,*) "Phi vs. CD"
+    phi=0
+    do ic=0,50
+        phi=phi+0.02
+        call vlm
+        write(18,*) phi*180/pi,cd
+    end do
+    write(21,*) "Phi vs. CD calculated."
+    write(*,*) "Phi vs. CD calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(19,109) b,c,aLpha1,xLambda1,phi1
+109 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Lambda:',f5.1,' Phi:',f7.1)
+    write(19,*) "Height above ground vs. CL"
+    ch=0.05
+    do ic=1,40
+        ch=ch+0.2
+        call vlm
+        write(19,*) ch,cL
+    end do
+    write(21,*) "Height above ground vs. CL calculated."
+    write(*,*) "Height above ground vs. CL calculated."
+    close(22)
+
+    open(22, file='inputdata/prev.txt')
+    read(22,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    aLpha=aLpha1*pi/180.0
+    phi=phi1*pi/180.0
+    xLambda=xLambda1*pi/180.0
+    write(20,110) b,c,aLpha1,xLambda1,phi1
+110 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Lambda:',f5.1,' Phi',f7.1)
+    write(20,*) "Height above ground vs. CD"
+    ch=0.05
+    do ic=1,40
+        ch=ch+0.2
+        call vlm
+        write(20,*) ch,cd
+    end do
+    write(21,*) "Height above ground vs. CD calculated."
+    write(*,*) "Height above ground vs. CD calculated."
+    
+! Close opened files
+    close(10)
+    close(11)
+    close(12)
+    close(13)
+    close(14)
+    close(15)
+    close(16)
+    close(17)
+    close(18)
+    close(19)
+    close(20)
+    close(21)
+    close(22)
+    write(*,*) "All opend files closed."
+    write(21,*) "All opened files closed."
+    write(*,*) "End of program."
+    write(21,*) "End of program."
+
+end program
+
+subroutine vlm
+    use com
+    real :: gamma(imax,jmax),dL(imax,jmax),dd(imax,jmax),dp(imax,jmax),a(max,max), &
+gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
+    integer :: ip(max)
 
 ! wing geometry
     call grid
@@ -88,7 +283,6 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
         end do
     end do
 
-    write(*,*) "Induced coefficients calculation starts..."
 ! influence coefficients calculation
     k=0
     do i=1,ib
@@ -149,8 +343,6 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             dw(k)=-(uinf*ds(i,j,1)+vinf*ds(i,j,2)+winf*ds(i,j,3))
         end do
     end do
-    write(*,*) "Induced coefficients calculated."
-    write(18,*) "Induced coefficients calculated."
 
 ! Solution of the problem: dw(i) = a(i,j)*gamma(i)
     k1=ib*jb
@@ -169,12 +361,12 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             gamma(i,j)=gamma1(k)
         end do
     end do
-
+ 
 ! forces calculation
     fL=0.0
     fd=0.0
     fm=0.0
-    que=0.5*ro*vt*vt
+    que=0.5*rho*vt*vt
 
     do j=1,jb
         dLy(j)=0.
@@ -183,7 +375,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             if(i.eq.1) gammaij=gamma(i,j)
             if(i.gt.1) gammaij=gamma(i,j)-gamma(i-1,j)
             dym=qf(i,j+1,2)-qf(i,j,2)
-            dL(i,j)=ro*vt*gammaij*dym
+            dL(i,j)=rho*vt*gammaij*dym
 
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
             call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
@@ -199,95 +391,24 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 195         wind=w1+w2-w3-w4
 
-            dd(i,j)=-ro*gammaij*wind*dym
+            dd(i,j)=-rho*gammaij*wind*dym
             dp(i,j)=dL(i,j)/ds(i,j,4)/que
             dLy(j)=dLy(j)+dL(i,j)
             ddy(j)=ddy(j)+dd(i,j)
             fL=fL+dL(i,j)
             fd=fd+dd(i,j)
             fm=fm+dL(i,j)*(qf(i,j,1)-0)
-
-            write(12,107) i,j,gammaij
-            write(13,110) qh(i,j,1),qh(i,j,2),dp(i,j)
         end do
-        write(14,113) j,dLy(j)*jb/b
-        write(15,116) j,ddy(j)*jb/b
-    end do
-    write(*,*) "Forces calculated."
-    write(18,*) "Forces calculated."
-    do i=1,ib
-        dLx(i)=0.
-        ddx(i)=0.
-        do j=1,jb
-            dLx(i)=dLx(i)+dL(i,j)
-            ddx(i)=ddx(i)+dd(i,j)
-        end do
-        write(16,119) i,dLx(i)*ib/c
-        write(17,122) i,ddx(i)*ib/c
     end do
     cL=fL/(que*s)
     cd=fd/(que*s)
     cm=fm/(que*s*c)
-    write(*,*) "Coefficients calculated."
-    write(18,*) "Coefficients calculated."
 
-! Write statements
-    write(10,101)
-    write(10,102) 2.*b,croot,ctip,ib*jb,2*s,ar,aLpha1,xLambda1,phi1,vt,ro,ch
-    write(10,103) cL, 2*fL, cm, cd
-    write(*,103) cL, 2*fL, cm, cd
- 
-! Formats
-101 format('Summary',/,7('-'),/)
-102 format('Wing Span =',11x,f8.2,/,'Root Chord Length =',3x,f8.2,/,'Tip Chord Length =',4x,f8.2,&
-/,'Total Number of',/, 'Panels (On Semi Span) =',i7,/,'Wing Area = ',10x,f8.2,/, &
-'Aspect Ratio =',8x,f8.2,/,'Angle of Attack =',5x,f8.2,&
-/,'Sweep Angle =',9x,f8.2,/,'Dihedral Angle =',6x,f8.2,/,'Free Stream Velocity =',f8.2, &
-/,'Density of Medium =',3x,f8.2,/,'Height Above ground =',f9.2,/)
-103 format('CL = ',f10.5,/,'FL = ',f10.2,/,'CM = ',f10.5,/,'CD = ',f10.5)
-! 104,105 in grid
-106 format(4x,'i',4x,'j',4x,'Gamma(i,j)')
-107 format(2(i5),2x,f10.5)
-108 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1)
-109 format(4x,'qh(i,j,1)',1x,'qh(i,j,2)',1x,'CdP(i,j) : Pressure difference coefficient of panel')
-110 format(2(f10.3),2x,f10.5)
-111 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
-112 format(4x,'j',4x,'dLy(j)*jb/b : Lift per span length')
-113 format(i5,2x,f10.5)
-114 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
-115 format(4x,'j',4x,'ddy(j)*jb/b : Drag per span length')
-116 format(i5,2x,f10.5)
-117 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
-118 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
-119 format(i5,2x,f10.5)
-120 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
-121 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
-122 format(i5,2x,f10.5)
-
-! Close opened files
-    close(10)
-    close(11)
-    close(12)
-    close(13)
-    close(14)
-    close(15)
-    close(16)
-    close(17)
-    close(18)
-    write(*,*) "All opend files closed."
-    write(18,*) "All opened files closed."
-    write(*,*) "End of program."
-    write(18,*) "End of program."
-
-end program main
+    return
+end subroutine vlm
 
 subroutine grid
     use com
-    write(*,*) "Subroutine grid starts..."
-    write(18,*) "Subroutine grid starts..."
-    write(11,104)
-104 format(5x,'xMesh',5x,'yMesh',5x,'zMesh')
-105 format(3(f10.3))
 
 ! qf(i,j,1-3): wing fixed vortices location
     dy=b/jb
@@ -306,142 +427,12 @@ subroutine grid
             else
                 yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
             end if
-            qf(i,j,2)=yLe*cos(phi)-yc*tan(phi)
-            qf(i,j,3)=yc*cos(alpha)*cos(phi)-qf(i,j,1)*tan(aLpha)+qf(i,j,2)*tan(phi)+ch
+            qf(i,j,2)=yLe*cos(phi)-yc*sin(phi)
+            qf(i,j,3)=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-0.75))*sin(aLpha)+yLe*sin(phi)+ch
         end do
         qf(ib2,j,1)=xte+dxw
         qf(ib2,j,2)=qf(ib1,j,2)
         qf(ib2,j,3)=qf(ib1,j,3)
-    end do
-
-! Generating coordinate points for mesh plotting
-    do j=1,jb1
-        yLe=dy*(j-1)
-        xLe=0+yLe*tan(xLambda)
-        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-        ci=xte-xLe
-        dx=ci/ib
-        if(mod(j,2).ne.0)then
-            do i=1,ib1
-                xme=(xLe+dx*(i-1))*cos(aLpha)
-                xc=dx*(i-1)
-                if(xc.le.p*ci) then
-                    yc=zm*xc*(2*p-xc/ci)/p**2
-                else
-                    yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                end if
-                yme=yLe*cos(phi)-yc*tan(phi)
-                zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                write(11,105) xme, yme, zme
-            end do
-        else
-            do i=ib1,1,-1
-                xme=(xLe+dx*(i-1))*cos(aLpha)
-                xc=dx*(i-1)
-                if(xc.le.p*ci) then
-                    yc=zm*xc*(2*p-xc/ci)/p**2
-                else
-                    yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                end if
-                yme=yLe*cos(phi)-yc*tan(phi)
-                zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                write(11,105) xme, yme, zme
-            end do
-        end if
-    end do
-    do i=1,ib1
-        if(mod(jb,2).ne.0)then
-            if(mod(i,2).ne.0)then
-                do j=1,jb1
-                    yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
-                    else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                    end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                    write(11,105) xme, yme, zme
-                end do
-            else
-                do j=jb1,1,-1
-                    yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
-                    else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                    end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                    write(11,105) xme, yme, zme
-                end do
-            end if
-        else
-            if(mod(i,2).eq.0)then
-                do j=1,jb1
-                    yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
-                    else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                    end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                    write(11,105) xme, yme, zme
-                end do
-            else
-                do j=jb1,1,-1
-                    yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
-                    else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
-                    end if
-                    yme=yLe*cos(phi)-yc*tan(phi)
-                    zme=yc*cos(alpha)*cos(phi)-xme*tan(aLpha)+yme*tan(phi)
-                    write(11,105) xme, yme, zme
-                end do
-            end if
-        end if 
-    end do
-    
-    write(*,*) "Mesh generated."
-    write(18,*) "Mesh generated."
-! Generating center points of panels for contour graphing of pressure coefficients
-    do j=1,jb
-        yLe=dy*(j-0.5)
-        xLe=0+yLe*tan(xLambda)
-        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-        dx=(xte-xLe)/ib
-
-        do i=1,ib1
-            qh(i,j,1)=xLe+dx*(i-0.5)
-            qh(i,j,2)=yLe
-        end do
     end do
 
 ! Generating wing collocation points and panel area vectors
@@ -456,14 +447,10 @@ qf(i+1,j,3),qf(i,j+1,1),qf(i,j+1,2),qf(i,j+1,3),qf(i+1,j+1,1), &
 qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
         end do
     end do
-    write(*,*) "Collocation points generated."
-    write(18,*) "Collocation points generated."
 
-    s=0.5*(croot+ctip)*b
+    s=(croot+ctip)*b/2
     c=s/b
     ar=2.0*b*b/s
-    write(*,*) "End of subroutine grid."
-    write(18,*) "End of subroutine grid."
 
     return
 end subroutine grid
@@ -591,8 +578,6 @@ end subroutine wing
 subroutine decomp(n,ndim,a,ip)
     real :: a(ndim,ndim),t
     integer :: ip(ndim)
-    write(*,*) "Subroutine decomp starts..."
-    write(18,*) "Subroutine decomp starts..."
  
     ip(n)=1
     do k=1,n
@@ -622,8 +607,6 @@ subroutine decomp(n,ndim,a,ip)
 4       end do
 5       if(a(k,k).eq.0.e0) ip(n)=0
     end do
-    write(*,*) "Subroutine decomp ended."
-    write(18,*) "Subroutine decomp ended."
 
     return
 end subroutine  decomp
@@ -631,8 +614,6 @@ end subroutine  decomp
 subroutine solver(n,ndim,a,b,ip)
     real :: a(ndim,ndim),b(ndim),t
     integer :: ip(ndim)
-    write(*,*) "Subroutine solver starts..."
-    write(18,*) "Subroutine solver starts..."
  
     if(n.eq.1) goto 9
     nm1=n-1
@@ -656,8 +637,6 @@ subroutine solver(n,ndim,a,b,ip)
         end do
     end do
 9   b(1)=b(1)/a(1,1)
-    write(*,*) "Subroutine solver ended."
-    write(18,*) "Subroutine solver ended."
 
     return
 end subroutine solver

@@ -8,8 +8,8 @@ Total Number of
 Panels (On Semi Span) =     75
 Wing Area =               2.83
 Aspect Ratio =            2.83
-Angle of Attack =         5.35
-Sweep Angle =            53.54
+Angle of Attack =         0.00
+Sweep Angle =             0.00
 Dihedral Angle =          0.00
 Free Stream Velocity =    5.00
 Density of Medium =       1.00

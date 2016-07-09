@@ -1,4 +1,4 @@
-Alpha:  5.4 Lambda: 53.5 Phi:  0.0
+Alpha:  0.0 Lambda:  0.0 Phi:  0.0
     qh(i,j,1) qh(i,j,2) CdP(i,j) : Pressure difference coefficient of panel
      0.211     0.047     0.36407
      0.504     0.047     0.24451
