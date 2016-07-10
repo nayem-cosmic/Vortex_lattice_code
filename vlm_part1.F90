@@ -133,11 +133,10 @@ program main
     close(15)
     close(16)
     close(17)
-    close(18)
-    write(*,*) "All opend files closed."
-    write(18,*) "All opened files closed."
     write(*,*) "End of program."
     write(18,*) "End of program."
+
+    close(18)
 
 end program
 

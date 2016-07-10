@@ -30,7 +30,7 @@ for l in f:
 #finter = interp1d(x_list, y_list, kind='cubic')
 #xnew_list = np.linspace(min(x_list), max(x_list), num = 50)
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
-plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='v', markerfacecolor='red')
+plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='v', markerfacecolor='blue')
 
 plt.title("Sweep Angle vs. CD")
 plt.text(-max(x_list)*0.95,max(y_list)*0.2,data[0],fontsize=8)

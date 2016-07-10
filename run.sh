@@ -8,8 +8,7 @@ echo Part 1
 echo Do you want to continue with part 2? '(y/n)'
 echo N.B. Part 2 contains angles vs. coefficients graph calculations etc.
 read  ans
-if [ $ans == 'y' ]
-then
+if [ $ans == 'y' ];then
     echo Part 2
     ./vlm_part2.out
 fi
@@ -22,8 +21,7 @@ python2 d_lift_span.py &
 python2 d_lift_chord.py &
 python2 d_drag_span.py &
 python2 d_drag_chord.py &
-if [ $ans == 'y' ]
-then
+if [ $ans == 'y' ];then
     python2 alphacl.py &
     python2 alphacm.py &
     python2 alphacd.py &

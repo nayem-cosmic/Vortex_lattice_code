@@ -38,7 +38,7 @@ program main
     open(18, file='outputdata/phicd.txt')
     open(19, file='outputdata/chcl.txt')
     open(20, file='outputdata/chcd.txt')
-    open(21, file='outputdata/log.txt')
+    open(21, file='outputdata/log.txt',access='append')
     open(22, file='inputdata/prev.txt')
     write(*,*) "Data files opened."
     write(21,*) "Data files opened."
@@ -242,8 +242,8 @@ program main
         call vlm
         write(20,*) ch,cd
     end do
-    write(21,*) "Height above ground vs. CD calculated."
     write(*,*) "Height above ground vs. CD calculated."
+    write(21,*) "Height above ground vs. CD calculated."
     
 ! Close opened files
     close(10)
@@ -257,12 +257,11 @@ program main
     close(18)
     close(19)
     close(20)
-    close(21)
     close(22)
-    write(*,*) "All opend files closed."
-    write(21,*) "All opened files closed."
     write(*,*) "End of program."
     write(21,*) "End of program."
+
+    close(21)
 
 end program
 
