@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from pylab import savefig
 #from scipy.interpolate import interp1d
 
-#plt.rc('font',family='serif')
-plt.rc('font',**{'family':'serif','serif':['Palatino']})
+plt.rc('font',family='serif')
+#plt.rc('font',**{'family':'serif','serif':['Palatino']})
 #plt.rc('text', usetex=True)
 
 fig = plt.figure()
@@ -33,11 +34,13 @@ for l in f:
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='o', markerfacecolor='red')
 
 plt.title("Angle of attack vs. CL")
-plt.text(max(x_list)*0.05,max(y_list)*0.95,data[0],fontsize=8)
-plt.text(max(x_list)*0.05,max(y_list)*0.91,data[1],fontsize=8)
+plt.text(max(x_list)*0.05,max(y_list)*0.9,data[0],fontsize=10)
+plt.text(max(x_list)*0.05,max(y_list)*0.86,data[1],fontsize=10)
 plt.xlabel("Alpha")
 plt.ylabel("CL")
 plt.grid()
+
+savefig('figures/alphacl.png')
 
 plt.show()
 

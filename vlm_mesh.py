@@ -1,5 +1,10 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from pylab import savefig
+
+plt.rc('font',family='serif')
+#plt.rc('font',**{'family':'serif','serif':['Palatino']})
+#plt.rc('text', usetex=True)
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
@@ -35,6 +40,8 @@ ax.plot_wireframe(x_list, y_list_neg, z_list, color='purple')
 #ax.set_aspect('equal'): this only works for 2D
 plt.xlabel('Chordwise Length')
 plt.ylabel('Spanwise Length')
+
+savefig('figures/vlm_mesh.png')
 
 plt.show()
 

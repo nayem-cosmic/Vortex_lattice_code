@@ -57,8 +57,8 @@ program main
 100 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi',f5.1,' H.G.:',f7.1)
     write(10,*) "Alpha vs. CL"
     alpha=0
-    do ic=0,50
-        alpha=alpha+0.02
+    do ic=0,40
+        alpha=alpha+0.01
         call vlm
         write(10,*) alpha*180/pi,cL
     end do
@@ -75,8 +75,8 @@ program main
 101 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
     write(11,*) "Lambda vs. CL"
     xLambda=-1
-    do ic=1,100
-        xLambda=xLambda+0.02
+    do ic=1,80
+        xLambda=xLambda+0.025
         call vlm
         write(11,*) xlambda*180/pi,cL
     end do
@@ -111,8 +111,8 @@ program main
 103 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
     write(13,*) "Alpha vs. CM"
     aLpha=0
-    do ic=0,50
-        aLpha=alpha+0.02
+    do ic=0,40
+        aLpha=alpha+0.01
         call vlm
         write(13,*) alpha*180/pi,cm
     end do
@@ -129,8 +129,8 @@ program main
 104 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
     write(14,*) "Lambda vs. CM"
     xLambda=-1
-    do ic=1,100
-        xLambda=xLambda+0.02
+    do ic=1,40
+        xLambda=xLambda+0.05
         call vlm
         write(14,*) xlambda*180/pi,cm
     end do
@@ -165,8 +165,8 @@ program main
 106 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
     write(16,*) "Alpha vs. CD"
     aLpha=0
-    do ic=0,50
-        aLpha=aLpha+0.02
+    do ic=0,40
+        aLpha=aLpha+0.01
         call vlm
         write(16,*) alpha*180/pi,cd
     end do
@@ -183,8 +183,8 @@ program main
 107 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Alpha:',f5.1,' Phi:',f5.1,' H.G.:',f7.1)
     write(17,*) "Lambda vs. CD"
     xLambda=-1
-    do ic=1,100
-        xLambda=xLambda+0.02
+    do ic=1,80
+        xLambda=xLambda+0.025
         call vlm
         write(17,*) xlambda*180/pi,cd
     end do

@@ -18,7 +18,7 @@ module com
     integer, parameter :: imax=20, jmax=50, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,vt,ch,rho,dxw,aLpha,phi,xLambda,croot,ctip,zm,p
+    real :: b,c,s,ar,vt,ch,rho,dxw,aLpha,aLpha1,phi,phi1,xLambda,xLambda1,croot,ctip,zm,p
 
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
@@ -68,7 +68,7 @@ program main
         p=.4
     else
         write(*,*) "Enter 4-digit NACA foil number (or enter zero for flat plane):"
-        write(*,*) "N.B.Last two digit will be ignored in this program because vlm doesn't count thickness."
+        write(*,*) "N.B. Last two digit will be ignored in this program because this program doesn't count thickness."
 1       read(*,*) inaca
         if(inaca.eq.0) then
 ! zm : maximum camber for NACA profile, p : location of maximum camber 
@@ -345,7 +345,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 116 format(i5,2x,f10.5)
 117 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
 118 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
-119 format(i5,2x,f10.5)
+119 format(i5,2x,f10.3)
 120 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
 121 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
 122 format(i5,2x,f10.5)

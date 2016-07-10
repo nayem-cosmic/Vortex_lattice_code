@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from pylab import savefig
 #from scipy.interpolate import interp1d
 
-#plt.rc('font',family='serif')
-plt.rc('font',**{'family':'serif','serif':['Palatino']})
+plt.rc('font',family='serif')
+#plt.rc('font',**{'family':'serif','serif':['Palatino']})
 #plt.rc('text', usetex=True)
 
 fig = plt.figure()
@@ -33,11 +34,13 @@ for l in f:
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='s', markerfacecolor='green')
 
 plt.title("Dihedral Angle vs. CM")
-plt.text(max(x_list)*0.5,max(y_list)*0.95,data[0],fontsize=8)
-plt.text(max(x_list)*0.5,max(y_list)*0.91,data[1],fontsize=8)
+plt.text(max(x_list)*0.5,max(y_list)*0.95,data[0],fontsize=10)
+plt.text(max(x_list)*0.5,max(y_list)*0.91,data[1],fontsize=10)
 plt.xlabel("Phi")
 plt.ylabel("CM")
 plt.grid()
+
+savefig('figures/phicm.png')
 
 plt.show()
 
