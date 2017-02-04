@@ -2,11 +2,9 @@
 ! This program is modified version of program written by Joe Katz, 1974.
 
 ! imax : maximum number of chordwise panels, jmax : maximum number of spanwise panels
-! ib : number of chordwise panels, jb : number of spanwise panels, b : wing semi span
-! c : chord length, ar : wing aspect ratio, ch : height above ground
+! ib : number of chordwise panels, jb : number of spanwise panels, b : wing span
+! c : chord length, ar : wing aspect ratio
 ! dxw : wake length, aLpha : angle of attack
-! phi : dihedral angle, xLambda : sweep angle
-! croot : chord length at wing root, ctip : chord length at wing tip
 ! qf : vortex ring corner points, qc : collocation points, ds : area vector
 ! qh : center points of panels, it is needed for pressure coefficient graphing
 ! a1 : auxiliary influence coefficient which is needed for calculation
@@ -18,7 +16,7 @@ module com
     integer, parameter :: imax=20, jmax=50, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,vt,ch,rho,dxw,aLpha,aLpha1,phi,phi1,xLambda,xLambda1,croot,ctip,zm,p
+    real :: b,c,s,ar,vt,rho,dxw,aLpha,aLpha1,zm,p
 
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
@@ -50,18 +48,14 @@ program main
     write(*,*) "    (c) Command line input(stdin)"
     read(*,*) ans
     if(ans.eq.'p') then
-        read(19,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+        read(19,*) zm,p,b,c,alpha1,vt,rho,jb,ib
     else if(ans.eq.'m') then
 ! Manual input
         ib=5
         jb=15
         b=1.415
-        croot=1.5
-        ctip=.5
+        c=1.5
         alpha1=0.
-        xlambda1=53.54
-        phi1=0.
-        ch=1000.
         rho=1.
         vt=5.
         zm=0.04
@@ -86,24 +80,17 @@ program main
             write(*,*) "Please enter a valid 4-digit number: "
             goto 1
         end if
-        write(*,*) "Enter wing's semispan:"
+        write(*,*) "Enter wing span:"
         read(*,*) b
-        write(*,*) "Enter root chord and tip chord respectively:"
-        read(*,*) croot,ctip
+        write(*,*) "Enter chord:"
+        read(*,*) c
         write(*,*) "Enter angle of attack:"
         write(*,*) "N.B. All angles are in degree unit."
         read(*,*) alpha1
-        write(*,*) "Enter sweep angle:"
-        read(*,*) xlambda1
-        write(*,*) "Enter dihedral angle:"
-        read(*,*) phi1
         write(*,*) "Now enter free stream velocity:"
         read(*,*) vt
         write(*,*) "Enter density of the medium:"
         read(*,*) rho
-        write(*,*) "Height above agound? If height is greater than 100, ground effect"
-        write(*,*) "will become so triffle that program will ignore this effect."
-        read(*,*) ch
         write(*,*) "Put spanwise panel number and chordwise panel number respectively:"
 2       read(*,*) jb,ib
         if(jb.gt.jmax.or.ib.gt.imax)then
@@ -111,14 +98,12 @@ program main
             goto 2
         end if
     end if
-    write(19,*) zm,p,b,croot,ctip,alpha1,xlambda1,phi1,vt,rho,ch,jb,ib
+    write(19,*) zm,p,b,c,alpha1,vt,rho,jb,ib
 
     ib1=ib+1
     ib2=ib+2
     jb1=jb+1
     aLpha=aLpha1*pi/180.0
-    phi=phi1*pi/180.0
-    xLambda=xLambda1*pi/180.0
 ! constants
     dxw=100.0*b
 
@@ -150,15 +135,15 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 ! Write heading of files
     write(12,106)
-    write(13,108) alpha1,xlambda1,phi1
+    write(13,108) alpha1
     write(13,109)
-    write(14,111) alpha1,xlambda1,phi1,rho,vt,ch,b/jb
+    write(14,111) alpha1,rho,vt,b/jb
     write(14,112)
-    write(15,114) alpha1,xlambda1,phi1,rho,vt,ch,b/jb
+    write(15,114) alpha1,rho,vt,b/jb
     write(15,115)
-    write(16,117) alpha1,xlambda1,phi1,rho,vt,ch,(croot+ctip)/2/ib
+    write(16,117) alpha1,rho,vt,c/ib
     write(16,118)
-    write(17,120) alpha1,xlambda1,phi1,rho,vt,ch,(croot+ctip)/2/ib
+    write(17,120) alpha1,rho,vt,c/ib
     write(17,121)
 
 ! wing geometry
@@ -178,7 +163,6 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     do i=1,ib
         do j=1,jb
             k=k+1
-            isign=0
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
             do i1=1,ib
@@ -188,43 +172,6 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
                     a(k,L)=a1(i1,j1)
                 end do
             end do
-
-! add influence of wing's other half
-            isign=1
-            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            L=0
-            do i1=1,ib
-                do j1=1,jb
-                    L=L+1
-                    a(k,L)=a(k,L)+a1(i1,j1)
-                end do
-            end do
-
-            if (ch.gt.100.0) goto 12
-! add influence of mirror image (due to ground)
-            isign=2
-            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            L=0
-            do i1=1,ib
-                do j1=1,jb
-                    L=L+1
-                    a(k,L)=a(k,L)+a1(i1,j1)
-                end do
-            end do
-
-! add mirror image influence of wing's other half
-            isign=3
-            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u,v,w,1.0,i,j)
-            L=0
-            do i1=1,ib
-                do j1=1,jb
-                    L=L+1
-                    a(k,L)=a(k,L)+a1(i1,j1)
-                end do
-            end do
-
-12          continue
-            isign=0
 
 ! calculate wing geometrical downwash
             uinf=vt
@@ -272,18 +219,8 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             dL(i,j)=rho*vt*gammaij*dym
 
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
-            call wing(qc(i,j,1),-qc(i,j,2),qc(i,j,3),gamma,u2,v2,w2,0.0,i,j)
 
-            if(ch.gt.100.0) goto 194
-            call wing(qc(i,j,1),qc(i,j,2),-qc(i,j,3),gamma,u3,v3,w3,0.0,i,j)
-            call wing(qc(i,j,1),-qc(i,j,2),-qc(i,j,3),gamma,u4,v4,w4,0.0,i,j)
-
-            goto 195
-
-194         w3=0.0
-            w4=0.0
-
-195         wind=w1+w2-w3-w4
+            wind=w1
 
             dd(i,j)=-rho*gammaij*wind*dym
             dp(i,j)=dL(i,j)/ds(i,j,4)/que
@@ -319,34 +256,34 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 ! Write statements
     write(10,101)
-    write(10,102) 2.*b,croot,ctip,ib*jb,2*s,ar,aLpha1,xLambda1,phi1,vt,rho,ch
-    write(10,103) cL, 2*fL, cm, cd
-    write(*,103) cL, 2*fL, cm, cd
+    write(10,102) b,c,ib*jb,s,ar,aLpha1,vt,rho
+    write(10,103) cL, fL, cm, cd
+    write(*,103) cL, fL, cm, cd
  
 ! Formats
 101 format('Summary',/,7('-'),/)
-102 format('Wing Span =',11x,f8.2,/,'Root Chord Length =',3x,f8.2,/,'Tip Chord Length =',4x,f8.2,&
-/,'Total Number of',/, 'Panels (On Semi Span) =',i7,/,'Wing Area = ',10x,f8.2,/, &
+102 format('Wing Span =',11x,f8.2,/,'Chord Length =',3x,f8.2,&
+/,'Total Number of',/, 'Panels =',i7,/,'Wing Area = ',10x,f8.2,/, &
 'Aspect Ratio =',8x,f8.2,/,'Angle of Attack =',5x,f8.2,&
-/,'Sweep Angle =',9x,f8.2,/,'Dihedral Angle =',6x,f8.2,/,'Free Stream Velocity =',f8.2, &
-/,'Density of Medium =',3x,f8.2,/,'Height Above ground =',f9.2,/)
+/,'Free Stream Velocity =',f8.2, &
+/,'Density of Medium =',3x,f8.2)
 103 format('CL = ',f10.5,/,'FL = ',f10.2,/,'CM = ',f10.5,/,'CD = ',f10.5)
 ! 104,105 in grid
 106 format(4x,'i',4x,'j',4x,'Gamma(i,j)')
 107 format(2(i5),2x,f10.5)
-108 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1)
+108 format('Alpha:'f5.1)
 109 format(4x,'qh(i,j,1)',1x,'qh(i,j,2)',1x,'CdP(i,j) : Pressure difference coefficient of panel')
 110 format(2(f10.3),2x,f10.5)
-111 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
+111 format('Alpha:'f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'dy:',1x,f6.4)
 112 format(4x,'j',4x,'dLy(j)*jb/b : Lift per span length')
-113 format(i5,2x,f10.5)
-114 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dy:',1x,f6.4)
+113 format(i5,2x,f14.3)
+114 format('Alpha:'f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'dy:',1x,f6.4)
 115 format(4x,'j',4x,'ddy(j)*jb/b : Drag per span length')
 116 format(i5,2x,f10.5)
-117 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
+117 format('Alpha:'f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'dx:',1x,f6.4)
 118 format(4x,'i',4x,'dLx(i)*ib/c : Lift per chord length')
-119 format(i5,2x,f10.3)
-120 format('Alpha:'f5.1,1x,'Lambda:',f5.1,1x,'Phi:',f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'H.G.:',f6.1,/,'dx:',1x,f6.4)
+119 format(i5,2x,f14.3)
+120 format('Alpha:'f5.1,/,'Density:',f6.1,1x,'V(inf):',f5.1,/,'dx:',1x,f6.4)
 121 format(4x,'i',4x,'ddx(i)*ib/c : Drag per chord length')
 122 format(i5,2x,f10.5)
     write(*,*) "Subroutine vlm ended."
@@ -361,27 +298,23 @@ subroutine grid
     write(18,*) "Subroutine grid starts..."
     write(11,104)
 104 format(5x,'xMesh',5x,'yMesh',5x,'zMesh')
-105 format(3(f10.3))
+105 format(f10.4,2x,f10.4,2x,f10.4)
 
 ! qf(i,j,1-3): wing fixed vortices location
+    dx=c/ib
     dy=b/jb
     do j=1,jb1
         yLe=dy*(j-1)
-        xLe=0+yLe*tan(xLambda)
-        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-! ci : instantenous chord length
-        ci=xte-xLe
-        dx=ci/ib
         do i=1,ib1
-            qf(i,j,1)=(xLe+dx*(i-0.75))*cos(aLpha)
+            qf(i,j,1)=(dx*(i-0.75))*cos(aLpha)
             xc=dx*(i-0.75)
-            if(xc.le.p*ci) then
-                yc=zm*xc*(2*p-xc/ci)/p**2
+            if(xc.le.p*c) then
+                yc=zm*xc*(2*p-xc/c)/p**2
             else
-                yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
             end if
-            qf(i,j,2)=yLe*cos(phi)-yc*sin(phi)
-            qf(i,j,3)=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-.75))*sin(aLpha)+yLe*sin(phi)+ch
+            qf(i,j,2)=yLe
+            qf(i,j,3)=yc*cos(alpha)-(dx*(i-0.75))*sin(aLpha)
         end do
         qf(ib2,j,1)=xte+dxw
         qf(ib2,j,2)=qf(ib1,j,2)
@@ -393,34 +326,31 @@ subroutine grid
 ! Generating coordinate points for mesh plotting
     do j=1,jb1
         yLe=dy*(j-1)
-        xLe=0+yLe*tan(xLambda)
-        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-        ci=xte-xLe
-        dx=ci/ib
+        dx=c/ib
         if(mod(j,2).ne.0)then
             do i=1,ib1
-                xme=(xLe+dx*(i-1))*cos(aLpha)
+                xme=(dx*(i-1))*cos(aLpha)
                 xc=dx*(i-1)
-                if(xc.le.p*ci) then
-                    yc=zm*xc*(2*p-xc/ci)/p**2
+                if(xc.le.p*c) then
+                    yc=zm*xc*(2*p-xc/c)/p**2
                 else
-                    yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                    yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                 end if
-                yme=yLe*cos(phi)-yc*sin(phi)
-                zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                yme=yLe
+                zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                 write(11,105) xme, yme, zme
             end do
         else
             do i=ib1,1,-1
-                xme=(xLe+dx*(i-1))*cos(aLpha)
+                xme=(dx*(i-1))*cos(aLpha)
                 xc=dx*(i-1)
-                if(xc.le.p*ci) then
-                    yc=zm*xc*(2*p-xc/ci)/p**2
+                if(xc.le.p*c) then
+                    yc=zm*xc*(2*p-xc/c)/p**2
                 else
-                    yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                    yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                 end if
-                yme=yLe*cos(phi)-yc*sin(phi)
-                zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                yme=yLe
+                zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                 write(11,105) xme, yme, zme
             end do
         end if
@@ -430,37 +360,31 @@ subroutine grid
             if(mod(i,2).ne.0)then
                 do j=1,jb1
                     yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    dx=c/ib
+                    xme=(dx*(i-1))*cos(aLpha)
                     xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
+                    if(xc.le.p*c) then
+                        yc=zm*xc*(2*p-xc/c)/p**2
                     else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*sin(phi)
-                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                    yme=yLe
+                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                     write(11,105) xme, yme, zme
                 end do
             else
                 do j=jb1,1,-1
                     yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
+                    dx=c/ib
                     xme=(xLe+dx*(i-1))*cos(aLpha)
                     xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
+                    if(xc.le.p*c) then
+                        yc=zm*xc*(2*p-xc/c)/p**2
                     else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*sin(phi)
-                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                    yme=yLe
+                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                     write(11,105) xme, yme, zme
                 end do
             end if
@@ -468,37 +392,31 @@ subroutine grid
             if(mod(i,2).eq.0)then
                 do j=1,jb1
                     yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    dx=c/ib
+                    xme=(dx*(i-1))*cos(aLpha)
                     xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
+                    if(xc.le.p*c) then
+                        yc=zm*xc*(2*p-xc/c)/p**2
                     else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*sin(phi)
-                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                    yme=yLe
+                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                     write(11,105) xme, yme, zme
                 end do
             else
                 do j=jb1,1,-1
                     yLe=dy*(j-1)
-                    xLe=0+yLe*tan(xLambda)
-                    xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-                    ci=xte-xLe
-                    dx=ci/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
+                    dx=c/ib
+                    xme=(dx*(i-1))*cos(aLpha)
                     xc=dx*(i-1)
-                    if(xc.le.p*ci) then
-                        yc=zm*xc*(2*p-xc/ci)/p**2
+                    if(xc.le.p*c) then
+                        yc=zm*xc*(2*p-xc/c)/p**2
                     else
-                        yc=zm*(ci-xc)*(1+xc/ci-2*p)/(1-p)**2
+                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
                     end if
-                    yme=yLe*cos(phi)-yc*sin(phi)
-                    zme=yc*cos(alpha)*cos(phi)-(xLe+dx*(i-1))*sin(aLpha)+yLe*sin(phi)
+                    yme=yLe
+                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
                     write(11,105) xme, yme, zme
                 end do
             end if
@@ -510,12 +428,10 @@ subroutine grid
 ! Generating center points of panels for contour graphing of pressure coefficients
     do j=1,jb
         yLe=dy*(j-0.5)
-        xLe=0+yLe*tan(xLambda)
-        xte=croot+(b*tan(xLambda)+ctip-croot)*yLe/b
-        dx=(xte-xLe)/ib
+        dx=c/ib
 
         do i=1,ib1
-            qh(i,j,1)=xLe+dx*(i-0.5)
+            qh(i,j,1)=dx*(i-0.5)
             qh(i,j,2)=yLe
         end do
     end do
@@ -535,9 +451,8 @@ qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
     write(*,*) "Collocation points generated."
     write(18,*) "Collocation points generated."
 
-    s=(croot+ctip)*b/2
-    c=s/b
-    ar=2.0*b*b/s
+    s=c*b
+    ar=b/c
     write(*,*) "End of subroutine grid."
     write(18,*) "End of subroutine grid."
 
@@ -643,15 +558,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
             w0=w2+w4+(w1+w3)*onoff
 
 ! magnitude of the influence co-efficient
-            if(isign.eq.0)then
-                a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
-            else if(isign.eq.1)then
-                a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
-            else if(isign.eq.2)then
-                a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
-            else if(isign.eq.3)then
-                a1(i,j)=u0*ds(i1,j1,1)-v0*ds(i1,j1,2)-w0*ds(i1,j1,3)
-            end if
+            a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
 
             if(i.eq.ib1) a1(ib,j)=a1(ib,j)+a1(ib1,j)
 

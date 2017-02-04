@@ -16,15 +16,12 @@ while true;do
     echo Graph will be generated of:
     echo -e '\t''(1)'  Mesh
     echo -e '\t''(2)'  Pressure Coefficients at Different Places
-    echo -e '\t''(3)'  Lift vs. Span
-    echo -e '\t''(4)'  Lift vs. Chord
-    echo -e '\t''(5)'  Drag vs. Span
-    echo -e '\t''(6)'  Drag vs. Chord
+    echo -e '\t''(3)'  Spanwise Lift
+    echo -e '\t''(4)'  Chordwise Lift
+    echo -e '\t''(5)'  Spanwise Drag
+    echo -e '\t''(6)'  Chordwise Drag
     echo -e '\t''(7)'  CL, CM, CD vs. Alpha
-    echo -e '\t''(8)'  CL, CM, CD vs. Lambda
-    echo -e '\t''(9)'  CL, CM, CD vs. Phi
-    echo -e '\t''(10)' CL, CD vs . Height Above Ground
-    echo -e '\t''(11)' Generate All Graphs
+    echo -e '\t''(8)' Generate All Graphs
     echo -e '\t''(0)' Exit
     read  ans
     if [ $ans == '1' ];then
@@ -44,17 +41,6 @@ while true;do
         python2 alphacm.py &
         python2 alphacd.py &
     elif [ $ans == '8' ];then
-        python2 lambdacl.py &
-        python2 lambdacm.py &
-        python2 lambdacd.py &
-    elif [ $ans == '9' ];then
-        python2 phicl.py &
-        python2 phicm.py &
-        python2 phicd.py &
-    elif [ $ans == '10' ];then
-        python2 chcl.py &
-        python2 chcd.py &
-    elif [ $ans == '11' ];then
         python2 vlm_mesh.py &
         python2 dp_coeff.py &
         python2 d_lift_span.py &
@@ -64,14 +50,6 @@ while true;do
         python2 alphacl.py &
         python2 alphacm.py &
         python2 alphacd.py &
-        python2 lambdacl.py &
-        python2 lambdacm.py &
-        python2 lambdacd.py &
-        python2 phicl.py &
-        python2 phicm.py &
-        python2 phicd.py &
-        python2 chcl.py &
-        python2 chcd.py &
     elif [ $ans == '0' ];then
         break
     else

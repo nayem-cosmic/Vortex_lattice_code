@@ -17,14 +17,6 @@
  End of program.
  Data files opened.
  Alpha vs. CL calculated.
- Lambda vs. CL calculated.
- Phi vs. CL calculated.
  Alpha vs. CM calculated.
- Lambda vs. CM calculated.
- Phi vs. CM calculated.
  Alpha vs. CD calculated.
- Lambda vs. CD calculated.
- Phi vs. CD calculated.
- Height above ground vs. CL calculated.
- Height above ground vs. CD calculated.
  End of program.

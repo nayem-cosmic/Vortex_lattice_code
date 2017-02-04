@@ -14,7 +14,6 @@ f = open('outputdata/mesh.txt', 'r')
 x_list = []
 y_list = []
 z_list = []
-y_list_neg = []
 
 first_line = f.readline()
 
@@ -27,12 +26,8 @@ for l in f:
     y_list.append(y)
     z_list.append(z)
 
-for i in y_list:
-    i=-i
-    y_list_neg.append(i)
 
 ax.plot_wireframe(x_list, y_list, z_list,color='purple')
-ax.plot_wireframe(x_list, y_list_neg, z_list, color='purple')
 # rstride : array row stride (step size), defaults to 1
 # cstride : array column stride (step size), defaults to 1
 
