@@ -262,8 +262,8 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
  
 ! Formats
 101 format('Summary',/,7('-'),/)
-102 format('Wing Span =',11x,f8.2,/,'Chord Length =',3x,f8.2,&
-/,'Total Number of',/, 'Panels =',i7,/,'Wing Area = ',10x,f8.2,/, &
+102 format('Wing Span =',11x,f8.2,/,'Chord Length =',8x,f8.2,&
+/,'Total Number of Panels =',i6,/,'Wing Area = ',10x,f8.2,/, &
 'Aspect Ratio =',8x,f8.2,/,'Angle of Attack =',5x,f8.2,&
 /,'Free Stream Velocity =',f8.2, &
 /,'Density of Medium =',3x,f8.2)

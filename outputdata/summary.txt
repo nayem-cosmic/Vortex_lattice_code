@@ -1,16 +1,15 @@
 Summary
 -------
 
-Wing Span =               8.00
-Chord Length =       1.00
-Total Number of
-Panels =    165
-Wing Area =               8.00
-Aspect Ratio =            8.00
-Angle of Attack =        10.00
+Wing Span =               4.00
+Chord Length =            0.80
+Total Number of Panels =    91
+Wing Area =               3.20
+Aspect Ratio =            5.00
+Angle of Attack =         5.00
 Free Stream Velocity =    5.00
-Density of Medium =    1000.00
-CL =    1.01563
-FL =  101563.36
-CM =    0.30256
-CD =    0.04094
+Density of Medium =    1025.00
+CL =    0.51713
+FL =   21202.21
+CM =    0.17274
+CD =    0.01714
