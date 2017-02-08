@@ -33,11 +33,11 @@ for l in f:
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='s', markerfacecolor='green')
 
-plt.title("Dihedral Angle vs. CM")
+plt.title("Moment Coefficient vs. Dihedral Angle")
 plt.text(max(x_list)*0.5,max(y_list)*0.95,data[0],fontsize=10)
 plt.text(max(x_list)*0.5,max(y_list)*0.91,data[1],fontsize=10)
-plt.xlabel("Phi")
-plt.ylabel("CM")
+plt.xlabel("Dihedral Angle")
+plt.ylabel("Moment Coefficient, CM")
 plt.grid()
 
 savefig('figures/phicm.png')

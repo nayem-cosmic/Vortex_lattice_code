@@ -33,11 +33,11 @@ for l in f:
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='p', markerfacecolor='blue')
 
-plt.title("Height Above Ground vs. CD")
+plt.title("Drag Coefficient vs. Height Above Ground")
 plt.text(max(x_list)*0.5,max(y_list)*0.9,data[0],fontsize=10)
 plt.text(max(x_list)*0.5,max(y_list)*0.88,data[1],fontsize=10)
 plt.xlabel("Height Above Ground")
-plt.ylabel("CD")
+plt.ylabel("Drag Coefficient, CD")
 plt.grid()
 
 savefig('figures/chcd.png')

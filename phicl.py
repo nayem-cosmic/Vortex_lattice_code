@@ -33,11 +33,11 @@ for l in f:
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='o', markerfacecolor='red')
 
-plt.title("Dihedral Angle vs. CL")
+plt.title("Lift Coefficient vs. Dihedral Angle")
 plt.text(max(x_list)*0.5,max(y_list)*0.95,data[0],fontsize=10)
 plt.text(max(x_list)*0.5,max(y_list)*0.91,data[1],fontsize=10)
-plt.xlabel("Phi")
-plt.ylabel("CL")
+plt.xlabel("Dihedral Angle")
+plt.ylabel("Lift Coefficient")
 plt.grid()
 
 savefig('figures/phicl.png')

@@ -33,11 +33,11 @@ for l in f:
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='p', markerfacecolor='blue')
 
-plt.title("Sweep Angle vs. CD")
+plt.title("Drag Coefficient vs. Sweep Angle")
 plt.text(-max(x_list)*0.95,max(y_list)*0.2,data[0],fontsize=10)
 plt.text(-max(x_list)*0.95,max(y_list)*0.15,data[1],fontsize=10)
-plt.xlabel("Lambda")
-plt.ylabel("CD")
+plt.xlabel("Sweep Angle")
+plt.ylabel("Drag Coefficient, CD")
 plt.grid()
 
 savefig('figures/lambdacd.png')
