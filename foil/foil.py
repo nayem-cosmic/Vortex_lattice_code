@@ -17,7 +17,7 @@ s = 1.
 m = .04
 p = .4
 t = .12
-ib = 20
+ib = 50
 jb = 10
 
 dx = c/ib
@@ -124,7 +124,7 @@ plt.ylabel('Spanwise Length')
 savefig('foil_mesh.png')
 
 f.truncate()
-f.write("Line\n")
+f.write("PFACE\n")
 i=0
 for data in xco:
     f.write(str(xco[i]))

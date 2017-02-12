@@ -57,8 +57,8 @@ program main
 100 format('S.Span:',f5.2,' Avg.Chord:',f5.2,/,'Lambda:',f5.1,' Phi',f5.1,' H.G.:',f7.1)
     write(10,*) "Alpha vs. CL"
     alpha=0
-    do ic=0,40
-        alpha=alpha+0.01
+    do ic=0,32
+        alpha=alpha+0.02
         call vlm
         write(10,*) alpha*180/pi,cL
     end do
