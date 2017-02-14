@@ -12,12 +12,12 @@ ax = fig.add_subplot(111, projection='3d')
 f = open("foil_mesh.scr", 'w')
 
 
-c = 10.
-s = 80.
-m = .04
-p = .4
-t = .12
-ib = 20
+c = 1.
+s = 6.
+m = .0
+p = .0
+t = .15
+ib = 30
 jb = 10
 
 dx = c/ib
