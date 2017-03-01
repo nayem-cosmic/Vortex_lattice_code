@@ -32,10 +32,10 @@ for l in f:
 #plt.plot(xnew_list, finter(xnew_list), color='black', linewidth=.5, linestyle='-', marker='o', markerfacecolor='r', label = 'Line Graph')
 plt.plot(x_list, y_list, color='black', linewidth=1, linestyle='-', marker='s', markerfacecolor='green')
 
-plt.title("CM vs. Angle of Attack")
+plt.title("Moment Coefficient vs. Angle of Attack")
 plt.text(max(x_list)*0.05,max(y_list)*0.95,data,fontsize=10)
-plt.xlabel("Alpha")
-plt.ylabel("CM")
+plt.xlabel("Angle of Attack")
+plt.ylabel("Moment Coefficient, CM")
 plt.grid()
 
 savefig('figures/alphacm.png')

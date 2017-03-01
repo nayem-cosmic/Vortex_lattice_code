@@ -44,7 +44,7 @@ program main
 100 format('Span:',f5.2,'Chord:',f5.2)
     write(10,*) "Alpha vs. CL"
     alpha=0
-    do ic=0,40
+    do ic=0,30
         alpha=alpha+0.01
         call vlm
         write(10,*) alpha*180/pi,cL
