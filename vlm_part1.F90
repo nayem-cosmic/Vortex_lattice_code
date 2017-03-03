@@ -1,4 +1,4 @@
-! 3d-VLM code for simple wing planforms with ground effect.
+! 3d-VPM code for simple wing planforms with ground effect.
 ! This program is modified version of program written by Joe Katz, 1974.
 
 ! imax : maximum number of chordwise panels, jmax : maximum number of spanwise panels
@@ -10,13 +10,13 @@
 ! a1 : auxiliary influence coefficient which is needed for calculation
 ! gamma : circulation, dL : partial lift force, dd : partial drag force
 ! dp : pressure difference, a : influence coefficient
-
+! zm : maximum camber, p : max camber position, t : thicknes of foil
 
 module com
     integer, parameter :: imax=20, jmax=50, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
-    integer :: ib,jb,ib1,ib2,jb1,isign
-    real :: b,c,s,ar,vt,rho,dxw,aLpha,aLpha1,zm,p
+    integer :: ib,jb,d_ib,d_ib1,d_ib2,jb1  ! d_ib1 = ib*2+1 and similiar. This is for upper and lower surfaces panel number.
+    real :: b,c,s,ar,vt,rho,dxw,aLpha,aLpha1,zm,p,t
 
     real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),qh(imax,jmax,2),ds(imax,jmax,4),a1(imax+1,jmax)
 end module com
@@ -48,7 +48,7 @@ program main
     write(*,*) "    (c) Command line input(stdin)"
     read(*,*) ans
     if(ans.eq.'p') then
-        read(19,*) zm,p,b,c,alpha1,vt,rho,jb,ib
+        read(19,*) zm,p,t,b,c,alpha1,vt,rho,jb,ib
     else if(ans.eq.'m') then
 ! Manual input
         ib=5
@@ -60,22 +60,19 @@ program main
         vt=5.
         zm=0.04
         p=.4
+        t=.12
     else
-        write(*,*) "Enter 4-digit NACA foil number (or enter zero for flat plane):"
-        write(*,*) "N.B. Last two digit will be ignored in this program because this program doesn't count thickness."
+        write(*,*) "Enter 4-digit NACA foil number:"
 1       read(*,*) inaca
-        if(inaca.eq.0) then
-! zm : maximum camber for NACA profile, p : location of maximum camber 
-            zm=0.
-            p=0.5
-        else if(inaca.ge.1000.and.inaca.le.9999.and.inaca.ne.0) then
+! zm : maximum camber for NACA profile, p : location of maximum camber, t : thickness of foil
+        if(inaca.ge.1000.and.inaca.le.9999.and.inaca.ne.0) then
             do k=1,4
                 idig(k)=mod(inaca,10)
                 inaca=inaca/10
             end do
-            if(idig(3).eq.0) idig(3)=5
             zm=idig(4)/100.
             p=idig(3)/10.
+            t = mod(inaca,100)/100.
         else
             write(*,*) "Please enter a valid 4-digit number: "
             goto 1
@@ -84,24 +81,25 @@ program main
         read(*,*) b
         write(*,*) "Enter chord:"
         read(*,*) c
-        write(*,*) "Enter angle of attack:"
-        write(*,*) "N.B. All angles are in degree unit."
+        write(*,*) "Enter angle of attack (in degree):"
         read(*,*) alpha1
         write(*,*) "Now enter free stream velocity:"
         read(*,*) vt
         write(*,*) "Enter density of the medium:"
         read(*,*) rho
-        write(*,*) "Put spanwise panel number and chordwise panel number respectively:"
+        write(*,*) "Put spanwise panel number and chordwise panel number respectively:" 
+! input ib and jb input for any surface: upper or lower. Total panel number at upper and total panel number at lower surface are equal.
 2       read(*,*) jb,ib
         if(jb.gt.jmax.or.ib.gt.imax)then
-            write(*,*) "Spanwise or chordwise array limit crossed! Please enter value in limit:"
+            write(*,*) "Spanwise or chordwise array limit crossed! Please enter value in limit:(smax: 50, cmax: 20)"
             goto 2
         end if
     end if
-    write(19,*) zm,p,b,c,alpha1,vt,rho,jb,ib
+    write(19,*) zm,p,t,b,c,alpha1,vt,rho,jb,ib
 
-    ib1=ib+1
-    ib2=ib+2
+    d_ib = ib*2
+    d_ib1=ib*2+1
+    d_ib2=ib*2+2
     jb1=jb+1
     aLpha=aLpha1*pi/180.0
 ! constants
@@ -305,125 +303,49 @@ subroutine grid
     dy=b/jb
     do j=1,jb1
         yLe=dy*(j-1)
-        do i=1,ib1
-            qf(i,j,1)=(dx*(i-0.75))*cos(aLpha)
-            xc=dx*(i-0.75)
-            if(xc.le.p*c) then
-                yc=zm*xc*(2*p-xc/c)/p**2
-            else
-                yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
+        do i=1,d_ib1
+            if(i.le.ib) then ! following portion is for lower surface
+                xc = (ib+1-i)*dx
+                if(xc.lt.p*c) then
+                    grad = 2*zm*(p-xc/c)/p**2
+                    zc = zm*xc*(2*p-xc/c)/p**2
+                else
+                    grad = 2*zm*(p-xc/c)/(1-p)**2
+                    zc = zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
+                end if
+                zt = 5*t*c*(.2969*sqrt(xc/c)-.1260*xc/c-.3516*(xc/c)**2+.2843*(xc/c)**3-.1015*(xc/c)**4)
+                x_temp = xc+zt*sin(atan(grad)) ! setting temporary x to apply angle of attack
+                z_temp = zc-zt*cos(atan(grad)) ! setting temporary z to apply angle of attack
+
+                qf(i,j,1) = x_temp*cos(aLpha)-z_temp*sin(aLpha) ! applaying rotation matrix for angle of attack
+                qf(i,j,2) = yLe ! angle of attack have no effect on angle of attack
+                qf(i,j,3) = x_temp*sin(aLpha)+z_temp*cos(aLpha) ! applying rotation matrix
+                
+            else ! following portion is for upper surface vertex points
+                xc = (i-ib-1)*dx
+                if(xc.lt.p*c) then
+                    grad = 2*zm*(p-xc/c)/p**2
+                    zc = zm*xc*(2*p-xc/c)/p**2
+                else
+                    grad = 2*zm*(p-xc/c)/(1-p)**2
+                    zc = zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
+                end if
+                zt = 5*t*c*(.2969*sqrt(xc/c)-.1260*xc/c-.3516*(xc/c)**2+.2843*(xc/c)**3-.1015*(xc/c)**4)
+                x_temp = xc-zt*sin(atan(grad)) 
+                z_temp = zc+zt*cos(atan(grad)) 
+
+                qf(i,j,1) = x_temp*cos(aLpha)-z_temp*sin(aLpha) 
+                qf(i,j,2) = yLe 
+                qf(i,j,3) = x_temp*sin(aLpha)+z_temp*cos(aLpha) 
             end if
-            qf(i,j,2)=yLe
-            qf(i,j,3)=yc*cos(alpha)-(dx*(i-0.75))*sin(aLpha)
+
         end do
-        qf(ib2,j,1)=xte+dxw
-        qf(ib2,j,2)=qf(ib1,j,2)
-        qf(ib2,j,3)=qf(ib1,j,3)
+        qf(d_ib2,j,1)=xte+dxw
+        qf(d_ib2,j,2)=qf(d_ib1,j,2)
+        qf(d_ib2,j,3)=qf(d_ib1,j,3)
     end do
     write(*,*) "Ring vortex apex points generated."
     write(18,*) "Ring vortex apex points generated."
-
-! Generating coordinate points for mesh plotting
-    do j=1,jb1
-        yLe=dy*(j-1)
-        dx=c/ib
-        if(mod(j,2).ne.0)then
-            do i=1,ib1
-                xme=(dx*(i-1))*cos(aLpha)
-                xc=dx*(i-1)
-                if(xc.le.p*c) then
-                    yc=zm*xc*(2*p-xc/c)/p**2
-                else
-                    yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                end if
-                yme=yLe
-                zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                write(11,105) xme, yme, zme
-            end do
-        else
-            do i=ib1,1,-1
-                xme=(dx*(i-1))*cos(aLpha)
-                xc=dx*(i-1)
-                if(xc.le.p*c) then
-                    yc=zm*xc*(2*p-xc/c)/p**2
-                else
-                    yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                end if
-                yme=yLe
-                zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                write(11,105) xme, yme, zme
-            end do
-        end if
-    end do
-    do i=1,ib1
-        if(mod(jb,2).ne.0)then
-            if(mod(i,2).ne.0)then
-                do j=1,jb1
-                    yLe=dy*(j-1)
-                    dx=c/ib
-                    xme=(dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*c) then
-                        yc=zm*xc*(2*p-xc/c)/p**2
-                    else
-                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                    end if
-                    yme=yLe
-                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                    write(11,105) xme, yme, zme
-                end do
-            else
-                do j=jb1,1,-1
-                    yLe=dy*(j-1)
-                    dx=c/ib
-                    xme=(xLe+dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*c) then
-                        yc=zm*xc*(2*p-xc/c)/p**2
-                    else
-                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                    end if
-                    yme=yLe
-                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                    write(11,105) xme, yme, zme
-                end do
-            end if
-        else
-            if(mod(i,2).eq.0)then
-                do j=1,jb1
-                    yLe=dy*(j-1)
-                    dx=c/ib
-                    xme=(dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*c) then
-                        yc=zm*xc*(2*p-xc/c)/p**2
-                    else
-                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                    end if
-                    yme=yLe
-                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                    write(11,105) xme, yme, zme
-                end do
-            else
-                do j=jb1,1,-1
-                    yLe=dy*(j-1)
-                    dx=c/ib
-                    xme=(dx*(i-1))*cos(aLpha)
-                    xc=dx*(i-1)
-                    if(xc.le.p*c) then
-                        yc=zm*xc*(2*p-xc/c)/p**2
-                    else
-                        yc=zm*(c-xc)*(1+xc/c-2*p)/(1-p)**2
-                    end if
-                    yme=yLe
-                    zme=yc*cos(alpha)-(dx*(i-1))*sin(aLpha)
-                    write(11,105) xme, yme, zme
-                end do
-            end if
-        end if 
-    end do
-    write(*,*) "Mesh generated."
-    write(18,*) "Mesh generated."
 
 ! Generating center points of panels for contour graphing of pressure coefficients
     do j=1,jb
@@ -538,10 +460,10 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
     u=0.0
     v=0.0
     w=0.0
-    do i=1,ib1
+    do i=1,d_ib1
         do j=1,jb
             i3=i
-            if(i.eq.ib1) i3=ib
+            if(i.eq.d_ib1) i3=ib
             vortic=gamma(i3,j)
             if(onoff.Lt.0.1) goto 2
             call vortex(x,y,z,qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i,j+1,1),    &
@@ -560,7 +482,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
 ! magnitude of the influence co-efficient
             a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
 
-            if(i.eq.ib1) a1(ib,j)=a1(ib,j)+a1(ib1,j)
+            if(i.eq.d_ib1) a1(ib,j)=a1(ib,j)+a1(d_ib1,j)
 
             u=u+u0
             v=v+v0
