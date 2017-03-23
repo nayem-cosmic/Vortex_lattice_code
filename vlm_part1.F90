@@ -148,7 +148,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     call grid
 
 ! aerodynamic calculations
-    do i=1,ib
+    do i=1,d_ib
         do j=1,jb
 ! gamma(i,j)=1.0 is required for influence matrix calculations
             gamma(i,j)=1.0
@@ -158,12 +158,12 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     write(*,*) "Induced coefficients calculation starts..."
 ! influence coefficients calculation
     k=0
-    do i=1,ib
+    do i=1,d_ib
         do j=1,jb
             k=k+1
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u,v,w,1.0,i,j)
             L=0
-            do i1=1,ib
+            do i1=1,d_ib
                 do j1=1,jb
                     L=L+1
 ! a(k,L)-is the normal velocity component due to a unit vortex lattice
@@ -182,7 +182,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     write(18,*) "Induced coefficients calculated."
 
 ! Solution of the problem: dw(i) = a(i,j)*gamma(i)
-    k1=ib*jb
+    k1=d_ib*jb
     do k=1,k1
         gamma1(k)=dw(k)
     end do
@@ -192,7 +192,7 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
 ! wing vortex lattice listing
     k=0
-    do i=1,ib
+    do i=1,d_ib
         do j=1,jb
             k=k+1
             gamma(i,j)=gamma1(k)
@@ -210,9 +210,10 @@ gamma1(max),dw(max),dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
     do j=1,jb
         dLy(j)=0.
         ddy(j)=0.
-        do i=1,ib
-            if(i.eq.1) gammaij=gamma(i,j)
-            if(i.gt.1) gammaij=gamma(i,j)-gamma(i-1,j)
+        do i=1,d_ib
+            if(i.eq.ib .or. i.eq.(ib+1)) gammaij=gamma(i,j)
+            if(i.gt.(ib+1)) gammaij=gamma(i,j)-gamma(i-1,j)
+            if(i.lt.ib) gammaij=gamma(i,j)-gamma(i+1,j)
             dym=qf(i,j+1,2)-qf(i,j,2)
             dL(i,j)=rho*vt*gammaij*dym
 
@@ -352,7 +353,7 @@ subroutine grid
         yLe=dy*(j-0.5)
         dx=c/ib
 
-        do i=1,ib1
+        do i=1,ib+1
             qh(i,j,1)=dx*(i-0.5)
             qh(i,j,2)=yLe
         end do
@@ -360,7 +361,7 @@ subroutine grid
 
 ! Generating wing collocation points and panel area vectors
     do j=1,jb
-        do i=1,ib
+        do i=1,d_ib
             qc(i,j,1)=(qf(i,j,1)+qf(i,j+1,1)+qf(i+1,j+1,1)+qf(i+1,j,1))/4
             qc(i,j,2)=(qf(i,j,2)+qf(i,j+1,2)+qf(i+1,j+1,2)+qf(i+1,j,2))/4
             qc(i,j,3)=(qf(i,j,3)+qf(i,j+1,3)+qf(i+1,j+1,3)+qf(i+1,j,3))/4
@@ -482,7 +483,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
 ! magnitude of the influence co-efficient
             a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
 
-            if(i.eq.d_ib1) a1(ib,j)=a1(ib,j)+a1(d_ib1,j)
+            if(i.eq.d_ib1) a1(ib,j)=a1(ib,j)+a1(d_ib1,j)-a1(1,j) ! Kutta condition
 
             u=u+u0
             v=v+v0
