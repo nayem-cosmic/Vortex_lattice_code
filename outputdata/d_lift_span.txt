@@ -1,9 +1,0 @@
-Alpha:  5.2
-Density:1000.0 V(inf):  5.0
-dy: 2.0000
-    j    dLy(j)*jb/b : Lift per span length
-    1        2421.594
-    2        2494.520
-    3        2504.582
-    4        2494.520
-    5        2421.593

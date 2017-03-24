@@ -1,9 +1,0 @@
-Alpha:  5.2
-Density:1000.0 V(inf):  5.0
-dy: 2.0000
-    j    ddy(j)*jb/b : Drag per span length
-    1    20.39648
-    2     9.83367
-    3     8.29129
-    4     9.83367
-    5    20.39645

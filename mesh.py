@@ -9,13 +9,13 @@ plt.rc('font',family='serif')
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-f = open('outputdata/mesh.txt', 'r')
+f = open('outputdata/grid.txt', 'r')
 
 x_list = []
 y_list = []
 z_list = []
 
-first_line = f.readline()
+#first_line = f.readline()
 
 for l in f:
     lstr = l.split()
@@ -36,7 +36,7 @@ ax.plot_wireframe(x_list, y_list, z_list,color='purple')
 plt.xlabel('Chordwise Length')
 plt.ylabel('Spanwise Length')
 
-savefig('figures/vlm_mesh.png')
+#savefig('figures/vlm_mesh.png')
 
 plt.show()
 
