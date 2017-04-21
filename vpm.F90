@@ -13,7 +13,7 @@
 ! zm : maximum camber, p : max camber position, th : thicknes of foil
 
 module com
-    integer, parameter :: imax=100, jmax=100, max=imax*jmax
+    integer, parameter :: imax=200, jmax=100, max=imax*jmax
     real, parameter :: pi=4.*atan(1.)
     integer :: ib,jb,d_ib,d_ib1,d_ib2,jb1  ! d_ib1 = ib*2+1 and similiar. This is for upper and lower surfaces panel number.
     real :: b,c,s,ar,vt,rho,dxw,aLpha,aLpha1,zm,p,th
@@ -26,20 +26,21 @@ program main
     integer :: idig(4)
 
     write(*,*) "Program starts..."
-    open(99, file='outputdata/grid.txt')
+    open(11, file='outputdata/grid.txt')
     open(12, file='outputdata/gammaij.txt')
     open(13, file='outputdata/dp_coeff.txt')
+    open(14, file='outputdata/cp_curve.txt')
     write(*,*) "Output data files opened."
 
 ! Manual input
-    inaca=4412
-    ib=15
+    inaca=0012
+    ib=50
     jb=9
-    b=5.
-    c=1.
+    b=8.
+    c=1
     alpha1=0.
     rho=1.
-    vt=5.
+    vt=10.
 
 ! NACA number conversion
 ! zm : maximum camber for NACA profile, p : location of maximum camber, t : thickness of foil
@@ -52,7 +53,7 @@ program main
     p=idig(3)/10.
 ! conversion ends
 
-    d_ib = ib*2
+    d_ib=ib*2
     d_ib1=ib*2+1
     d_ib2=ib*2+2
     jb1=jb+1
@@ -63,9 +64,10 @@ program main
     call vlm
 
 ! Close opened files
+    close(11)
     close(12)
     close(13)
-    close(18)
+    close(14)
     write(*,*) "End of program."
 
 end program
@@ -137,14 +139,10 @@ gamma1(max),dw(max) !,dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 ! write statements
     write(12,106)
     write(13,109)
+    write(14,111)
  
 ! forces calculation
     write(*,*) "Force calculation starts..."
-    fLup=0.0
-    fLdown=0.0
-    fdup=0.0
-    fd=0.0
-    fm=0.0
     que=0.5*rho*vt*vt
 
     do j=1,jb
@@ -152,16 +150,21 @@ gamma1(max),dw(max) !,dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             !if(i.eq.ib .or. i.eq.(ib+1)) gammaij=gamma(i,j)
             !if(i.gt.(ib+1)) gammaij=gamma(i,j)-gamma(i-1,j)
             !if(i.lt.ib) gammaij=gamma(i,j)-gamma(i+1,j)
+            !dym=qf(i,j+1,2)-qf(i,j,2)
+            !dL(i,j)=rho*vt*gammaij*dym
             gammaij=gamma(i,j)
-            dym=qf(i,j+1,2)-qf(i,j,2)
-            dL(i,j)=rho*vt*gammaij*dym
 
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
-
             wind=w1
+            call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,1.0,i,j)
+            vr=sqrt(u1**2+v1**2+w1**2)
+            !uind=u1
 
-            dd(i,j)=-rho*gammaij*wind*dym
-            dp(i,j)=dL(i,j)/ds(i,j,4)/que
+
+            dp(i,j)=1-(vr/vt)**2
+
+            !dd(i,j)=-rho*gammaij*wind*dym
+            !dp(i,j)=dL(i,j)/ds(i,j,4)/que
 !            dLy(j)=dLy(j)+dL(i,j)
 !            ddy(j)=ddy(j)+dd(i,j)
 !            fL=fL+dL(i,j)
@@ -170,6 +173,7 @@ gamma1(max),dw(max) !,dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 
             write(12,107) i,j,gammaij
             write(13,110) i,qc(i,j,1),qc(i,j,2),qc(i,j,3),dp(i,j)
+            if(j.eq.int(jb/2)) write(14,*) qc(i,j,1),dp(i,j)
         end do
 !        write(14,113) j,dLy(j)*jb/b
 !        write(15,116) j,ddy(j)*jb/b
@@ -198,6 +202,7 @@ gamma1(max),dw(max) !,dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
 107 format(2(i5),2x,f10.5)
 109 format('i',4x,'qc(i,j,1)',1x,'qc(i,j,2)',1x,'qc(i,j,3)',1x,'Cp(i,j)')
 110 format(i4,3(f10.3),2x,f10.5)
+111 format(8x,'x',15x,'Cp')
     write(*,*) "Subroutine vlm ended."
 
     return
@@ -260,10 +265,9 @@ subroutine grid
 
 do j=1,jb1
     do i=1,d_ib1
-        write(99,*) qf(i,j,1),qf(i,j,2),qf(i,j,3)
+        write(11,*) qf(i,j,1),qf(i,j,2),qf(i,j,3)
     end do
 end do 
-    close(99)
 
 ! Generating center points of panels for contour graphing of pressure coefficients
 !    do j=1,jb
@@ -398,7 +402,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
 ! magnitude of the influence co-efficient
             a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
 
-            if(i.eq.d_ib1) a1(ib,j)=a1(ib,j)-a1(d_ib1,j)-a1(1,j) ! Kutta condition
+            if(i.eq.d_ib1) a1(d_ib,j)=-a1(d_ib,j)-a1(d_ib1,j)+a1(1,j) ! Kutta condition
 
             u=u+u0
             v=v+v0
