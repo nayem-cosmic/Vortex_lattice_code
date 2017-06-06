@@ -18,7 +18,8 @@ module com
     integer :: ib,jb,d_ib,d_ib1,d_ib2,jb1  ! d_ib1 = ib*2+1 and similiar. This is for upper and lower surfaces panel number.
     real :: b,c,s,ar,vt,rho,dxw,aLpha,aLpha1,zm,p,th
 
-    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,4),a1(imax+1,jmax)
+    real :: qf(imax+1,jmax+1,3),qc(imax,jmax,3),ds(imax,jmax,7),a1(imax+1,jmax)
+! ds(i,j,1),ds(i,j,2),ds(i,j,3) : normal unit vector, ds(i,j,4),ds(i,j,5),ds(i,j,6) : tangential unit vector, ds(i,j,7) : area
 end module com
 
 program main
@@ -33,12 +34,12 @@ program main
     write(*,*) "Output data files opened."
 
 ! Manual input
-    inaca=0012
+    inaca=4412
     ib=50
-    jb=9
+    jb=7
     b=8.
     c=1
-    alpha1=0.
+    alpha1=13.
     rho=1.
     vt=10.
 
@@ -157,14 +158,16 @@ gamma1(max),dw(max) !,dLy(jmax),ddy(jmax),dLx(imax),ddx(imax)
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,0.0,i,j)
             wind=w1
             call wing(qc(i,j,1),qc(i,j,2),qc(i,j,3),gamma,u1,v1,w1,1.0,i,j)
-            vr=sqrt(u1**2+v1**2+w1**2)
+            vr=u1*ds(i,j,4)+v1*ds(i,j,5)+w1*ds(i,j,6)
+            !vr=sqrt(u1**2+v1**2+w1**2)
+            !write(*,*) ds(i,j,4),ds(i,j,5),ds(i,j,6)
             !uind=u1
 
 
             dp(i,j)=1-(vr/vt)**2
 
             !dd(i,j)=-rho*gammaij*wind*dym
-            !dp(i,j)=dL(i,j)/ds(i,j,4)/que
+            !dp(i,j)=dL(i,j)/ds(i,j,7)/que
 !            dLy(j)=dLy(j)+dL(i,j)
 !            ddy(j)=ddy(j)+dd(i,j)
 !            fL=fL+dL(i,j)
@@ -289,7 +292,7 @@ end do
 
             call panel(qf(i,j,1),qf(i,j,2),qf(i,j,3),qf(i+1,j,1),qf(i+1,j,2), &
 qf(i+1,j,3),qf(i,j+1,1),qf(i,j+1,2),qf(i,j+1,3),qf(i+1,j+1,1), &
-qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
+qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4),ds(i,j,5),ds(i,j,6),ds(i,j,7))
         end do
     end do
     write(*,*) "Collocation points generated."
@@ -301,7 +304,7 @@ qf(i+1,j+1,2),qf(i+1,j+1,3),ds(i,j,1),ds(i,j,2),ds(i,j,3),ds(i,j,4))
     return
 end subroutine grid
 
-subroutine panel(x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,v1,v2,v3,sp)
+subroutine panel(x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,v1,v2,v3,t1,t2,t3,sp)
 
 ! calculation of panel area and vector
     a1=x2-x3
@@ -324,6 +327,20 @@ subroutine panel(x1,y1,z1,x2,y2,z2,x3,y3,z3,x4,y4,z4,v1,v2,v3,sp)
 
 ! Calculation of panel area. sp=0.5*|AxB|
     sp=a/2
+
+! calculation of spanwise vector
+    d1=((x3+x4)-(x1+x2))/2.0
+    d2=((y3+y4)-(y1+y2))/2.0
+    d3=((z3+z4)-(z1+z2))/2.0
+    d=sqrt(d1**2+d2**2+d3**2)
+    c1=d1/d
+    c2=d2/d
+    c3=d3/d
+
+! calculation of tangential vector
+    t1=v2*c3-v3*c2
+    t2=c1*v3-v1*c3
+    t3=v1*c2-v2*c1
 
 ! calculation of panel area
 !    e1=x3-x1
@@ -402,7 +419,7 @@ subroutine wing(x,y,z,gamma,u,v,w,onoff,i1,j1)
 ! magnitude of the influence co-efficient
             a1(i,j)=u0*ds(i1,j1,1)+v0*ds(i1,j1,2)+w0*ds(i1,j1,3)
 
-            if(i.eq.d_ib1) a1(d_ib,j)=-a1(d_ib,j)-a1(d_ib1,j)+a1(1,j) ! Kutta condition
+            if(i.eq.d_ib1) a1(d_ib,j)=a1(d_ib,j)+a1(d_ib1,j)-a1(1,j) ! Kutta condition
 
             u=u+u0
             v=v+v0

@@ -11,7 +11,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111)
 
 f = open('outputdata/cp_curve.txt', 'r')
-g = open('naca0012_0.txt','r')
+g = open('naca4412_13.txt','r')
 
 x_list = []
 y_list = []
@@ -30,8 +30,8 @@ for l in f:
     y_list.append(y)
 
 for l in g:
-    lstr = l.split()
-    x = float(lstr[0])/100.
+    lstr = l.split(',')
+    x = float(lstr[0])
     x_list_st.append(x)
     y = float(lstr[1])
     y_list_st.append(y)
