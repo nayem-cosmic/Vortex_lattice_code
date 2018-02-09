@@ -1,0 +1,9 @@
+Alpha:  5.0 Lambda: 45.0 Phi:  0.0
+Density:  62.0 V(inf):  1.0
+H.G.:1000.0
+dy: 0.1250
+    j    dLy(j)*jb/b : Lift per span length
+    1     1.85346
+    2     1.95065
+    3     1.94412
+    4     1.69469

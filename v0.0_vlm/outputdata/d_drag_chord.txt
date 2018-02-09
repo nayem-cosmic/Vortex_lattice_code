@@ -1,0 +1,6 @@
+Alpha:  5.0 Lambda: 45.0 Phi:  0.0
+Density:  62.0 V(inf):  1.0
+H.G.:1000.0
+dx: 0.2000
+    i    ddx(i)*ib/c : Drag per chord length
+    1     0.08372

@@ -1,0 +1,9 @@
+Alpha:  5.0 Lambda: 45.0 Phi:  0.0
+Density:  62.0 V(inf):  1.0
+H.G.:1000.0
+dy: 0.1250
+    j    ddy(j)*jb/b : Drag per span length
+    1     0.00168
+    2     0.01995
+    3     0.03466
+    4     0.07765

@@ -1,0 +1,21 @@
+Summary
+-------
+
+Wing Span =               1.00
+Root Chord Length =       0.20
+Tip Chord Length =        0.20
+Total Number of
+Panels (On Semi Span) =      4
+Wing Area =               0.20
+Aspect Ratio =            5.00
+Angle of Attack =         5.00
+Sweep Angle =            45.00
+Dihedral Angle =          0.00
+Free Stream Velocity =    1.00
+Density of Medium =      62.00
+Height Above ground =  1000.00
+
+CL =    0.30012
+FL =       1.86
+CM =    0.34897
+CD =    0.00540
