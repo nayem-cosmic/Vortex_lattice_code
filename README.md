@@ -1,4 +1,4 @@
-# thesis_vlm
+# Analysis of Potential Flow around a 3D Hydro-wing by Vortex Lattice Method
 The thesis deals with the potential flow problem around the three-dimensional hydrofoil which is constructed by specifying the Laplace equation with the body boundary condition, the boundary condition for the flow disturbance far from the body and the Kutta condition at the trailing edge of the lifting hydrofoil.
 
 In order to solve the problem, the Laplace equation is transformed into an integral equation in terms of a distribution of singular solutions on the boundaries. After satisfying the boundary conditions the integral equation can be written into a matrix form and this matrix is solved by Gaussian Elimination procedure.
